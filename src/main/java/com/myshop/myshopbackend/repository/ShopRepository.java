@@ -9,5 +9,6 @@ import com.myshop.myshopbackend.model.Shop;
 
 @Repository
 public interface ShopRepository extends JpaRepository<Shop, Long> {
+    // Relationship ke base par find karega
     Optional<Shop> findByOwnerId(Long ownerId);
 }
