@@ -29,7 +29,8 @@ import com.myshop.myshopbackend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+// YAHAN CHANGE KIYA HAI: "*" hata kar explicit origins allow kiye hain taaki Credentials error na aaye
+@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"}, allowCredentials = "true")
 public class UserController {
 
     @Autowired
@@ -95,7 +96,6 @@ public class UserController {
                 user.setRole(selectedRole.toUpperCase());
                 userRepo.save(user);
                 
-                // Response bhej rahe hain taaki frontend ise save kar sake
                 Map<String, Object> response = new HashMap<>();
                 response.put("id", user.getId());
                 response.put("name", user.getName());
@@ -108,7 +108,7 @@ public class UserController {
         }
     }
 
-   @PostMapping("/login")
+    @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         try {
             String identifier = loginRequest.get("identifier");
@@ -120,7 +120,6 @@ public class UserController {
 
             User user = userRepo.findByEmailOrMobile(identifier);
             
-            // Null check taaki empty table par crash na ho
             if (user != null && user.getPassword().equals(password)) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("id", user.getId());
@@ -134,7 +133,6 @@ public class UserController {
             }
             return ResponseEntity.status(401).body("Invalid credentials");
         } catch (Exception e) {
-            // Logs mein error dikhega
             e.printStackTrace(); 
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
@@ -143,31 +141,27 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         try {
-            // 1. Check if Email exists
             if (userRepo.findByEmail(user.getEmail()) != null) {
                 return ResponseEntity.badRequest().body("Error: Email already registered!");
             }
 
-            // 2. Check if Mobile exists (Sirf agar mobile null nahi hai)
             if (user.getMobile() != null && !user.getMobile().isEmpty()) {
                 if (userRepo.findByMobile(user.getMobile()) != null) {
                     return ResponseEntity.badRequest().body("Error: Mobile number already registered!");
                 }
             }
 
-            // 3. Default Role set karein agar frontend se nahi aaya
             if (user.getRole() == null || user.getRole().isEmpty()) {
                 user.setRole("CUSTOMER");
             } else {
                 user.setRole(user.getRole().toUpperCase());
             }
 
-            // 4. Save User
             User savedUser = userRepo.save(user);
             return ResponseEntity.ok(savedUser);
 
         } catch (Exception e) {
-            e.printStackTrace(); // Ye Render logs mein error dikhayega
+            e.printStackTrace(); 
             return ResponseEntity.status(500).body("Registration Failed: " + e.getMessage());
         }
     }
