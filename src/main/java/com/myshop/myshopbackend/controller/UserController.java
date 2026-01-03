@@ -167,56 +167,62 @@ public class UserController {
 
    // UserController.java ke forgot-password block ko isse replace karein
 @PostMapping("/forgot-password")
-public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
-    String identifier = request.get("identifier");
-    User user = userRepo.findByEmailOrMobile(identifier);
-    
-    if (user == null) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found!");
-    }
-    
-    // 1. OTP Generate and Save
-    String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-    user.setOtp(otp);
-    user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
-    userRepo.save(user);
-
-    System.out.println("DEBUG: OTP for " + identifier + " is: " + otp);
-
-    try {
-        // 2. Attempt to Send Mail
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject("OTP Reset | MyShop");
-        message.setText("Your OTP for password reset is: " + otp);
-        mailSender.send(message);
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String identifier = request.get("identifier");
+        User user = userRepo.findByEmailOrMobile(identifier);
         
-        return ResponseEntity.ok(Map.of("message", "OTP Sent Successfully to your email"));
-    } catch (Exception e) {
-        // 3. Fallback: Agar mail fail ho jaye toh error mat dikhao, balki OTP bhej do
-        System.err.println("Mail sending failed: " + e.getMessage());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found!"));
+        }
         
-        Map<String, String> fallbackResponse = new HashMap<>();
-        fallbackResponse.put("message", "Mail Server Busy. Use this OTP for now (Dev Mode)");
-        fallbackResponse.put("otp", otp); // Ye line aapko browser mein OTP dikha degi
-        return ResponseEntity.ok(fallbackResponse); 
+        // 1. OTP Generate aur Save karein
+        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+        user.setOtp(otp);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        userRepo.save(user);
+
+        System.out.println("DEBUG: Generated OTP for " + identifier + " is: " + otp);
+
+        try {
+            // 2. Mail bhejne ki koshish
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Password Reset OTP - MyShop");
+            message.setText("Your OTP is: " + otp);
+            mailSender.send(message);
+            
+            return ResponseEntity.ok(Map.of("message", "OTP sent to your email successfully!"));
+            
+        } catch (Exception e) {
+            // 3. AGAR MAIL FAIL HUA: Toh error mat do, response mein OTP bhej do
+            System.err.println("Mail sending failed, providing OTP in response: " + e.getMessage());
+            
+            Map<String, String> fallbackResponse = new HashMap<>();
+            fallbackResponse.put("message", "Mail Server Connection Failed! (Dev Mode)");
+            fallbackResponse.put("otp", otp); // Frontend isse pakad lega
+            return ResponseEntity.ok(fallbackResponse);
+        }
     }
-}
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         String identifier = request.get("identifier");
         String otp = request.get("otp");
         String newPassword = request.get("newPassword");
+        
         User user = userRepo.findByEmailOrMobile(identifier);
         
-        if (user != null && otp != null && otp.equals(user.getOtp()) && user.getOtpExpiry().isAfter(LocalDateTime.now())) {
-            user.setPassword(newPassword);
-            user.setOtp(null);
-            user.setOtpExpiry(null);
-            userRepo.save(user);
-            return ResponseEntity.ok("Success");
+        if (user != null && otp != null && otp.equals(user.getOtp())) {
+            if (user.getOtpExpiry().isAfter(LocalDateTime.now())) {
+                user.setPassword(newPassword);
+                user.setOtp(null);
+                user.setOtpExpiry(null);
+                userRepo.save(user);
+                return ResponseEntity.ok(Map.of("message", "Success"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "OTP Expired!"));
+            }
         }
-        return ResponseEntity.badRequest().body("Invalid/Expired OTP");
+        return ResponseEntity.badRequest().body(Map.of("message", "Invalid OTP!"));
     }
 }
