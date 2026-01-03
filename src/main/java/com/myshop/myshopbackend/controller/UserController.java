@@ -31,7 +31,8 @@ import com.myshop.myshopbackend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"}, allowCredentials = "true")
+@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app",
+        "http://localhost:5500" }, allowCredentials = "true")
 public class UserController {
 
     @Autowired
@@ -41,7 +42,7 @@ public class UserController {
     @Autowired
     private JavaMailSender mailSender;
 
-    private final String FRONTEND_BASE = "http://127.0.0.1:5500/frontend/";
+    private final String FRONTEND_BASE = "https://myshop-backend-final.vercel.app/frontend/";
 
     // 1. Google Login & Registration Success Logic
     @GetMapping("/loginSuccess")
@@ -83,8 +84,8 @@ public class UserController {
 
         try {
             String encodedName = URLEncoder.encode(user.getName(), StandardCharsets.UTF_8.toString());
-            String finalUrl = FRONTEND_BASE + targetPage + "?id=" + user.getId() + 
-                              "&name=" + encodedName + "&role=" + user.getRole() + extraParams;
+            String finalUrl = FRONTEND_BASE + targetPage + "?id=" + user.getId() +
+                    "&name=" + encodedName + "&role=" + user.getRole() + extraParams;
             return new RedirectView(finalUrl);
         } catch (Exception e) {
             return new RedirectView(FRONTEND_BASE + targetPage + "?id=" + user.getId());
@@ -103,12 +104,11 @@ public class UserController {
                 User user = userOpt.get();
                 user.setRole(selectedRole.toUpperCase());
                 userRepo.save(user);
-                
+
                 return ResponseEntity.ok(Map.of(
-                    "id", user.getId(),
-                    "name", user.getName(),
-                    "role", user.getRole()
-                ));
+                        "id", user.getId(),
+                        "name", user.getName(),
+                        "role", user.getRole()));
             }
             return ResponseEntity.status(404).body("User not found");
         } catch (Exception e) {
@@ -125,7 +125,7 @@ public class UserController {
             response.put("id", user.getId());
             response.put("name", user.getName());
             response.put("role", user.getRole());
-            
+
             if ("SHOPKEEPER".equalsIgnoreCase(user.getRole())) {
                 response.put("shopId", shopRepo.findByOwnerId(user.getId()).map(Shop::getId).orElse(null));
             }
@@ -140,7 +140,8 @@ public class UserController {
         if (userRepo.findByEmail(user.getEmail()) != null) {
             return ResponseEntity.badRequest().body("Error: Email already registered!");
         }
-        if (user.getRole() == null) user.setRole("CUSTOMER");
+        if (user.getRole() == null)
+            user.setRole("CUSTOMER");
         user.setRole(user.getRole().toUpperCase());
         return ResponseEntity.ok(userRepo.save(user));
     }
@@ -150,11 +151,11 @@ public class UserController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String identifier = request.get("identifier");
         User user = userRepo.findByEmailOrMobile(identifier);
-        
+
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found!"));
         }
-        
+
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
@@ -168,14 +169,13 @@ public class UserController {
             message.setSubject("Reset Your Password - MyShop");
             message.setText("Your OTP is: " + otp);
             mailSender.send(message);
-            
+
             return ResponseEntity.ok(Map.of("message", "Email Sent"));
         } catch (Exception e) {
             // Render block karega toh ye wala response jayega
             return ResponseEntity.ok(Map.of(
-                "message", "Mail Server Offline",
-                "otp", otp 
-            ));
+                    "message", "Mail Server Offline",
+                    "otp", otp));
         }
     }
 
@@ -184,7 +184,7 @@ public class UserController {
         String identifier = request.get("identifier");
         String otp = request.get("otp");
         String newPassword = request.get("newPassword");
-        
+
         User user = userRepo.findByEmailOrMobile(identifier);
         if (user != null && otp != null && otp.equals(user.getOtp())) {
             if (user.getOtpExpiry().isAfter(LocalDateTime.now())) {
