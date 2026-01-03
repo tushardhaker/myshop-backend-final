@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | MyShop.pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root { 
+            --primary: #232f3e; 
+            --accent: #febd69; 
+            --bg-gray: #f0f2f2; 
+            --success: #2e7d32;
+        }
+
+        body { background-color: var(--bg-gray); font-family: 'Inter', sans-serif; color: #111; }
+        
+        /* Navbar Customization */
+        .navbar { background-color: var(--primary); padding: 12px 0; border-bottom: 4px solid var(--accent); }
+        .navbar-brand { font-size: 22px; letter-spacing: -1px; }
+
+        /* Search & Title */
+        .page-title { font-weight: 700; font-size: 28px; color: #111; }
+        .search-container { position: relative; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
+        .search-input { padding-left: 40px; border-radius: 8px; border: 1px solid #bbb; height: 45px; width: 350px !important; }
+
+        /* Order Card Styling */
+        .order-card { 
+            background: white; border-radius: 10px; border: 1px solid #d5d9d9; 
+            margin-bottom: 30px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+        }
+        
+        .order-header { 
+            background-color: #f6f6f6; padding: 15px 25px; border-bottom: 1px solid #d5d9d9; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-meta { display: flex; gap: 40px; }
+        .meta-label { font-size: 11px; text-transform: uppercase; color: #565959; display: block; margin-bottom: 2px; }
+        .meta-value { font-size: 14px; font-weight: 600; color: #333; }
+
+        .order-body { padding: 25px; }
+        
+        /* Item Styling */
+        .product-title { font-size: 16px; font-weight: 700; color: #007185; text-decoration: none; }
+        .product-title:hover { color: #c45500; text-decoration: underline; }
+        .shop-tag { background: #f0f2f2; color: #565959; font-size: 12px; padding: 3px 10px; border-radius: 15px; border: 1px solid #ddd; }
+
+        /* Tracking Bar Modern UI */
+        .tracking-box { background: #fafafa; border-radius: 8px; padding: 20px; border: 1px solid #eee; margin-top: 15px; }
+        .track-wrapper { position: relative; display: flex; justify-content: space-between; margin-top: 10px; }
+        .track-line-bg { position: absolute; top: 12px; left: 10%; width: 80%; height: 6px; background: #e0e0e0; z-index: 1; border-radius: 10px; }
+        .track-line-active { position: absolute; top: 12px; left: 10%; height: 6px; background: var(--success); z-index: 2; transition: width 1s ease; border-radius: 10px; }
+        
+        .track-point { position: relative; z-index: 3; text-align: center; width: 60px; }
+        .dot { width: 30px; height: 30px; background: white; border: 3px solid #e0e0e0; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; transition: 0.3s; }
+        .track-point.active .dot { border-color: var(--success); color: var(--success); background: #e8f5e9; }
+        .track-point.completed .dot { background: var(--success); border-color: var(--success); color: white; }
+        .track-point span { font-size: 11px; font-weight: 700; color: #666; }
+        .track-point small { font-size: 9px; display: block; color: var(--success); font-weight: 600; }
+
+        /* Buttons */
+        .btn-action { 
+            padding: 6px 15px; border-radius: 6px; font-size: 13px; font-weight: 600; 
+            transition: 0.2s; border: 1px solid #d5d9d9; background: white; color: #111;
+        }
+        .btn-chat { background: #effcfd; border-color: #007185; color: #007185; }
+        .btn-chat:hover { background: #dff6f9; }
+        .btn-cancel { border-color: #cc0c39; color: #cc0c39; }
+        .btn-cancel:hover { background: #cc0c39; color: white; }
+        .btn-rate { background: var(--accent); border-color: #a88734; }
+
+        /* Chat Window Styling */
+        #chatWindow { height: 400px; background: #fff; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        .msg { margin-bottom: 10px; padding: 10px 15px; border-radius: 12px; max-width: 85%; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-sent { background: #dcf8c6; margin-left: auto; border-bottom-right-radius: 2px; }
+        .msg-received { background: white; margin-right: auto; border-bottom-left-radius: 2px; }
+
+        .star-rating i { font-size: 28px; color: #ddd; cursor: pointer; transition: 0.2s; }
+        .star-rating i.checked { color: #ffa41c; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar shadow-sm mb-5">
+        <div class="container d-flex justify-content-between align-items-center px-4">
+            <a class="navbar-brand fw-bold text-white" href="customer.html">MyShop<span class="text-warning">.pro</span></a>
+            <div class="text-white d-flex align-items-center gap-3">
+                
+                <div class="border-start ps-3 ms-2">
+                    <i class="fas fa-user-circle me-1"></i> <span id="userNameDisplay">Account</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h2 class="page-title">Your Orders</h2>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="search-container d-inline-block">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="orderSearch" class="form-control search-input shadow-none" placeholder="Search products, orders or shops..." onkeyup="filterOrders()">
+                </div>
+            </div>
+        </div>
+        
+        <div id="ordersList">
+            <div class="text-center py-5">
+                <div class="spinner-grow text-warning"></div>
+                <p class="mt-3 text-muted fw-bold">Syncing your order history...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">How's your product?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted small mb-3">Rate your experience to help other shoppers</p>
+                    <div class="star-rating mb-4" id="starContainer">
+                        <i class="fas fa-star" onclick="setRating(1)"></i>
+                        <i class="fas fa-star" onclick="setRating(2)"></i>
+                        <i class="fas fa-star" onclick="setRating(3)"></i>
+                        <i class="fas fa-star" onclick="setRating(4)"></i>
+                        <i class="fas fa-star" onclick="setRating(5)"></i>
+                    </div>
+                    <textarea id="reviewComment" class="form-control" rows="4" placeholder="Write a few words about the quality, delivery, etc..."></textarea>
+                    <input type="hidden" id="targetItemId">
+                </div>
+                <div class="modal-footer border-0 p-3">
+                    <button type="button" class="btn btn-warning w-100 fw-bold py-2" onclick="submitReview()">Share Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chatModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content overflow-hidden border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h6 class="modal-title" id="chatTitle">Chatting with Shop</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="chatWindow" class="p-3 overflow-auto"></div>
+                    <div class="p-3 bg-light border-top">
+                        <div class="input-group">
+                            <input type="file" id="chatImageInput" style="display:none" accept="image/*" onchange="uploadAndSendImage(this)">
+                            <button class="btn btn-light border" onclick="document.getElementById('chatImageInput').click()">
+                                <i class="fas fa-camera text-primary"></i>
+                            </button>
+                            <input type="text" id="chatInput" class="form-control shadow-none" placeholder="Ask about delivery, product...">
+                            <button class="btn btn-warning fw-bold px-4" onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName');
+    let allOrders = [];
+    let activeChatShopId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!userId) { window.location.href = 'login.html'; return; }
+        document.getElementById('userNameDisplay').innerText = userName || "My Account";
+        fetchOrders();
+    });
+
+    async function fetchOrders() {
+        try {
+            const response = await fetch(`http://localhost:8080/api/orders/user/${userId}`);
+            allOrders = await response.json();
+            renderOrders(allOrders.slice().reverse());
+        } catch (err) {
+            document.getElementById('ordersList').innerHTML = `<p class="text-center py-5">Connection failed. Please check your server.</p>`;
+        }
+    }
+
+    function renderOrders(orders) {
+        const listContainer = document.getElementById('ordersList');
+        if (orders.length === 0) {
+            listContainer.innerHTML = `<div class="text-center py-5"><img src="https://cdn-icons-png.flaticon.com/512/4076/4076403.png" width="100"><h4 class="mt-3 text-muted">No orders yet!</h4></div>`;
+            return;
+        }
+
+        listContainer.innerHTML = orders.map(order => {
+            const dateStr = new Date(order.orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            
+            return `
+                <div class="order-card shadow-sm">
+                    <div class="order-header">
+                        <div class="header-meta">
+                            <div><span class="meta-label">Order Placed</span><span class="meta-value">${dateStr}</span></div>
+                            <div><span class="meta-label">Total</span><span class="meta-value">₹${order.totalAmount.toLocaleString()}</span></div>
+                            
+                        </div>
+                        <div class="text-end">
+                            <span class="meta-label">Order # MS-${order.id}</span>
+                            <a href="#" class="small text-primary text-decoration-none">View Details</a>
+                        </div>
+                    </div>
+                    
+                    <div class="order-body">
+                        <div class="row">
+                            <div class="col-md-7">
+                                ${order.items.map(item => `
+                                    <div class="d-flex mb-4 pb-3 border-bottom align-items-start">
+                                        <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-shopping-bag text-muted fa-2x"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <a href="#" class="product-title">${item.productName}</a>
+                                            <div class="mt-1"><span class="shop-tag"><i class="fas fa-store me-1"></i>${item.shopName}</span></div>
+                                            <div class="mt-3 d-flex gap-2">
+                                                <button onclick="openChat(${item.shopId}, '${item.shopName}')" class="btn btn-action btn-chat"><i class="far fa-comment-dots me-1"></i> Chat with Seller</button>
+                                                ${item.itemStatus === 'PLACED' ? `<button onclick="cancelOrderItem(${item.id})" class="btn btn-action btn-cancel">Cancel Item</button>` : ''}
+                                                ${item.itemStatus === 'DELIVERED' ? `<button onclick="openReviewModal(${item.id})" class="btn btn-action btn-rate">Rate Item</button>` : ''}
+                                            </div>
+                                            ${item.rating ? `
+                                                <div class="mt-3 p-2 bg-light rounded" style="font-size: 13px;">
+                                                    <div class="text-warning">${'★'.repeat(item.rating)}${'☆'.repeat(5-item.rating)}</div>
+                                                    <div class="fst-italic text-muted">"${item.review}"</div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                        <div class="text-end ps-3">
+                                            <div class="fw-bold">₹${item.price.toLocaleString()}</div>
+                                            <div class="small text-muted">Qty: ${item.quantity}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="col-md-5 border-start">
+                                <div class="px-3">
+                                    <h6 class="fw-bold small mb-4"><i class="fas fa-truck-loading me-2 text-warning"></i>Delivery Tracking</h6>
+                                    ${renderTimeline(order.items[0])}
+                                    
+                                    <div class="mt-5 p-3 rounded bg-light border">
+                                        <div class="small fw-bold mb-2">Delivery Address:</div>
+                                        <div class="small text-muted">${order.address}</div>
+                                       
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function renderTimeline(item) {
+        const fillWidth = item.itemStatus === 'DELIVERED' ? '100%' : (item.itemStatus === 'SHIPPED' ? '50%' : '0%');
+        const fmt = (d) => d ? new Date(d).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'}) : '--';
+        
+        return `
+            <div class="tracking-box">
+                <div class="track-wrapper">
+                    <div class="track-line-bg"></div>
+                    <div class="track-line-active" style="width: ${fillWidth};"></div>
+                    
+                    <div class="track-point completed">
+                        <div class="dot"><i class="fas fa-shopping-basket"></i></div>
+                        <span>Placed</span>
+                        <small>${fmt(item.placedAt)}</small>
+                    </div>
+                    <div class="track-point ${item.shippedAt ? 'completed' : 'active'}">
+                        <div class="dot"><i class="fas fa-shipping-fast"></i></div>
+                        <span>Shipped</span>
+                        <small>${item.shippedAt ? fmt(item.shippedAt) : 'Pending'}</small>
+                    </div>
+                    <div class="track-point ${item.deliveredAt ? 'completed' : (item.shippedAt ? 'active' : '')}">
+                        <div class="dot"><i class="fas fa-home"></i></div>
+                        <span>Delivered</span>
+                        <small>${item.deliveredAt ? fmt(item.deliveredAt) : 'Arriving Soon'}</small>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // --- CHAT SYSTEM ---
+    async function openChat(shopId, shopName) {
+        activeChatShopId = shopId;
+        document.getElementById('chatTitle').innerText = "Chatting with " + shopName;
+        new bootstrap.Modal(document.getElementById('chatModal')).show();
+        loadChatHistory();
+    }
+
+    async function uploadAndSendImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const formData = new FormData();
+        formData.append("file", input.files[0]);
+        try {
+            const res = await fetch('http://localhost:8080/api/chat/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            await fetch(`http://localhost:8080/api/chat/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ senderId: userId, receiverId: activeChatShopId, senderType: 'CUSTOMER', message: "Sent an attachment", imageUrl: data.url })
+            });
+            loadChatHistory();
+            input.value = '';
+        } catch (err) { alert("Upload failed!"); }
+    }
+
+    async function loadChatHistory() {
+        if(!activeChatShopId) return;
+        const res = await fetch(`http://localhost:8080/api/chat/history/${userId}/${activeChatShopId}`);
+        const history = await res.json();
+        const win = document.getElementById('chatWindow');
+        win.innerHTML = history.map(m => `
+            <div class="msg ${m.senderType === 'CUSTOMER' ? 'msg-sent' : 'msg-received'}">
+                ${m.imageUrl ? `<img src="${m.imageUrl}" class="img-fluid rounded mb-2 shadow-sm" style="max-width:220px; cursor:pointer;" onclick="window.open('${m.imageUrl}')"><br>` : ''}
+                ${m.message}
+                <div class="text-end" style="font-size: 8px; opacity: 0.6; margin-top: 5px;">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+            </div>`).join('');
+        win.scrollTop = win.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if(!text || !activeChatShopId) return;
+        try {
+            const response = await fetch(`http://localhost:8080/api/chat/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ senderId: userId, receiverId: activeChatShopId, senderType: 'CUSTOMER', message: text })
+            });
+            if(response.ok) { input.value = ''; loadChatHistory(); }
+        } catch (err) { alert("Server Error!"); }
+    }
+
+    // --- REVIEWS & RATING ---
+    let selectedRating = 0;
+    function openReviewModal(itemId) { 
+        document.getElementById('targetItemId').value = itemId; 
+        selectedRating = 0;
+        document.querySelectorAll('#starContainer i').forEach(s => s.classList.remove('checked'));
+        new bootstrap.Modal(document.getElementById('reviewModal')).show(); 
+    }
+    function setRating(n) { 
+        selectedRating = n; 
+        document.querySelectorAll('#starContainer i').forEach((s, i) => i < n ? s.classList.add('checked') : s.classList.remove('checked')); 
+    }
+    async function submitReview() {
+        if(selectedRating === 0) { alert("Please pick a star rating!"); return; }
+        const itemId = document.getElementById('targetItemId').value;
+        const btn = event.target;
+        btn.disabled = true; btn.innerText = "Posting...";
+        await fetch(`http://localhost:8080/api/orders/item/${itemId}/review`, {
+            method: 'PUT', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ rating: selectedRating, review: document.getElementById('reviewComment').value })
+        });
+        location.reload();
+    }
+
+    function filterOrders() {
+        const term = document.getElementById('orderSearch').value.toLowerCase();
+        const filtered = allOrders.filter(o => o.items.some(i => i.productName.toLowerCase().includes(term) || i.shopName.toLowerCase().includes(term)) || o.id.toString().includes(term));
+        renderOrders(filtered);
+    }
+
+    async function cancelOrderItem(id) { 
+        if(confirm("Are you sure you want to cancel this item?")) { 
+            await fetch(`http://localhost:8080/api/orders/item/${id}/status?status=CANCELLED`, {method:'PUT'}); 
+            fetchOrders(); 
+        } 
+    }
+</script>
+</body>
+</html>

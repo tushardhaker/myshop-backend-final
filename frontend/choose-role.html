@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Role | MyShop</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #0f1111; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .box { 
+            background: #1a1c1e; 
+            padding: 40px; 
+            border-radius: 12px; 
+            text-align: center; 
+            border: 1px solid #444; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .btn { 
+            padding: 15px 30px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px; 
+            transition: 0.3s;
+            width: 200px;
+        }
+        .cust { background: #ff9900; color: black; }
+        .shop { background: #007bff; color: white; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        h2 { color: #ff9900; margin-bottom: 10px; }
+        p { color: #ccc; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Welcome to MyShop!</h2>
+        <p>Please select how you want to use your account:</p>
+        <button class="btn cust" onclick="saveRole('USER')">I am a Customer</button>
+        <button class="btn shop" onclick="saveRole('SHOPKEEPER')">I am a Shopkeeper</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+
+        async function saveRole(selectedRole) {
+            if (!userId) {
+                alert("User ID missing!");
+                return;
+            }
+
+            try {
+                console.log(`Sending Role: ${selectedRole} for User ID: ${userId}`);
+                
+                const res = await fetch('http://localhost:8080/api/users/update-role', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId, role: selectedRole })
+                });
+
+                if (res.ok) {
+                    console.log("Role updated in backend. Redirecting...");
+                    
+                    // Yahan hum absolute path use karenge taaki redirect fail na ho
+                    if (selectedRole === 'SHOPKEEPER') {
+                        window.location.href = "create-shop.html?userId=" + userId;
+                    } else {
+                        // Aapki file ka naam customer.html hai
+                        window.location.href = "customer.html?id=" + userId + "&role=USER";
+                    }
+                } else {
+                    const errorMsg = await res.text();
+                    alert("Backend Error: " + errorMsg);
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert("Network error. Is your Backend running?");
+            }
+        }
+    </script>
+</body>
+</html>

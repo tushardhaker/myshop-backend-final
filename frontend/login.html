@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | MyShop Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #0f1111; 
+            --card-dark: #1a1c1e;
+            --accent-blue: #007185;
+            --action-orange: #ff9900;
+            --text-muted: #a7acb2;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+        }
+
+        .login-container {
+            background: var(--card-dark);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            max-width: 900px;
+            width: 95%;
+            margin: auto;
+            min-height: 520px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .branding-panel {
+            background: linear-gradient(135deg, #232f3e 0%, #131921 100%);
+            width: 40%;
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .branding-panel h1 {
+            font-weight: 800;
+            font-size: 32px;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, #ff9900);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .branding-panel p {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .feature-item i {
+            color: var(--action-orange);
+            margin-right: 12px;
+        }
+
+        .form-panel {
+            width: 60%;
+            padding: 60px;
+            background: var(--card-dark);
+        }
+
+        .form-label {
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            background: #2a2d31;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 12px 15px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .form-control:focus {
+            background: #2a2d31;
+            border-color: var(--action-orange);
+            box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.2);
+            color: #fff;
+        }
+
+        .btn-login {
+            background: var(--action-orange);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 12px;
+            font-weight: 700;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #e68a00;
+            transform: translateY(-1px);
+        }
+
+        .forgot-link {
+            float: right;
+            font-size: 13px;
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        
+        .forgot-link:hover {
+            color: #ff9900;
+            text-decoration: underline;
+        }
+
+        .signup-section {
+            margin-top: 40px;
+            text-align: center;
+            border-top: 1px solid #333;
+            padding-top: 25px;
+        }
+
+        .signup-section p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .btn-outline-register {
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 6px;
+            padding: 8px 20px;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            transition: 0.3s;
+        }
+
+        .btn-outline-register:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: #777;
+            color: #fff;
+        }
+
+        .alert {
+            background: #fdf0f0;
+            border: 1px solid #d5a3a3;
+            color: #b12704;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+        .divider:after, .divider:before {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #eee;
+    }
+    </style>
+</head>
+<body>
+
+    <div class="container d-flex justify-content-center">
+        <div class="login-container">
+            <div class="branding-panel">
+                <h1>MyShop Pro</h1>
+                <p>The most powerful way to manage your online inventory and sales.</p>
+                <div class="feature-item"><i class="fas fa-check-circle"></i> Real-time Inventory Tracking</div>
+                <div class="feature-item"><i class="fas fa-check-circle"></i> Advanced Sales Analytics</div>
+                <div class="feature-item"><i class="fas fa-check-circle"></i> Secure Seller Portal</div>
+            </div>
+
+            <div class="form-panel">
+                <div id="message"></div>
+                <h2 class="fw-bold mb-4">Sign-In</h2>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="text" id="identifier" class="form-control" placeholder="Enter Your Email ID" required>
+                    </div>
+                    
+                    <div class="mb-1">
+                        <a href="forgot-password.html" class="forgot-link">Forgot Password?</a>
+                        <label class="form-label">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <div class="mt-3 text-center">
+    <div class="divider d-flex align-items-center my-4">
+        <p class="text-center fw-bold mx-3 mb-0 text-muted">OR</p>
+    </div>
+    
+    <a href="http://localhost:8080/oauth2/authorization/google" 
+       class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center" 
+       style="border-radius: 8px; padding: 10px; font-weight: 500;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+             alt="Google" style="width: 20px; margin-right: 10px;">
+        Continue with Google
+    </a>
+</div>
+                    
+                    <button type="submit" id="loginBtn" class="btn btn-login">Continue</button>
+                    
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px;">
+                        By signing in, you agree to MyShop's Conditions of Use and Privacy Notice.
+                    </p>
+
+                    <div class="signup-section">
+                        <p>New to MyShop?</p>
+                        <a href="register.html" class="btn-outline-register">Create your MyShop account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const loginForm = document.getElementById('loginForm');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        
+        const identifier = document.getElementById('identifier').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('http://localhost:8080/api/users/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Details Store karna
+                localStorage.setItem('userId', data.id);
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('userRole', data.role);
+
+                // Role based redirect logic
+                if (data.role.toUpperCase() === 'SHOPKEEPER') {
+                    if (data.shopId === null || data.shopId === undefined) {
+                        // First time shopkeeper: Create Shop page par bhejo
+                        alert("Welcome! Please complete your shop registration.");
+                        window.location.href = 'create-shop.html';
+                    } else {
+                        // Purana shopkeeper: Dashboard par bhejo
+                        localStorage.setItem('shopId', data.shopId);
+                        window.location.href = 'shopkeeper_dashboard.html';
+                    }
+                } else {
+                    // Normal Customer: Shopping page par bhejo
+                    window.location.href = 'customer.html';
+                }
+            } else {
+                const errorMsg = await response.text();
+                alert("Login Failed: " + (errorMsg || "Invalid Credentials"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Server connection failed!");
+        }
+    });
+</script>
+</body>
+</html>

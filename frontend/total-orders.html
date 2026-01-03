@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Orders | Shopkeeper Panel</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --accent-color: #6366f1;
+            --success-green: #166534;
+            --bg-light: #f8fafc;
+            --online-blue: #2563eb;
+            --warning-orange: #f59e0b;
+        }
+
+        body { 
+            background-color: var(--bg-light); 
+            font-family: 'Inter', sans-serif; 
+            color: #1e293b; 
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navigation Styling */
+        .navbar { 
+            background: var(--primary-dark); 
+            padding: 1.2rem; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        }
+
+        .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
+
+        /* Order Card Component */
+        .order-card { 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            margin-bottom: 25px; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+            overflow: hidden; 
+        }
+
+        .order-card:hover { 
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px -5px rgba(0,0,0,0.1); 
+        }
+
+        .section-box { padding: 25px; }
+
+        .item-details { 
+            border-right: 1px solid #f1f5f9; 
+            background-color: #ffffff;
+        }
+
+        /* Labels & Value Text */
+        .label-text { 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            color: #94a3b8; 
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .value-text { 
+            font-size: 1rem; 
+            font-weight: 600; 
+            color: #1e293b; 
+        }
+
+        /* Status Pills */
+        .status-pill { 
+            font-size: 0.75rem; 
+            padding: 6px 14px; 
+            border-radius: 50px; 
+            font-weight: 700; 
+            display: inline-block; 
+            text-transform: uppercase;
+        }
+
+        .st-placed { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+        .st-paid { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; } /* Naya Status */
+        .st-shipped { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+        .st-delivered { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .st-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .st-returned { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+        /* Filter Section Styles */
+        .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; }
+
+        /* Dynamic Payment Badges */
+        .badge-payment {
+            font-size: 0.7rem; 
+            padding: 4px 12px; 
+            border-radius: 6px; 
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-cod { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-online { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .badge-upi { background: #f5f3ff; color: #5b21b6; border: 1px solid #ddd6fe; }
+
+        /* Chat System */
+        #chatWindow { 
+            height: 400px; 
+            overflow-y: auto; 
+            background: #f8fafc; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .msg { 
+            margin-bottom: 15px; 
+            padding: 12px 16px; 
+            border-radius: 15px; 
+            max-width: 85%; 
+        }
+        /* Toast Animation */
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+        .msg-sent { background: var(--primary-dark); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-received { background: white; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e2e8f0; }
+
+        .btn-whatsapp { color: #25D366; border: 1.5px solid #25D366; background: transparent; padding: 6px 16px; border-radius: 50px; font-weight: 600; }
+        .btn-invoice { color: var(--accent-color); border: 1.5px solid var(--accent-color); background: transparent; padding: 6px 16px; border-radius: 50px; font-weight: 600; margin-right: 8px; }
+        
+        .rotating { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .upload-loader { font-size: 11px; color: #64748b; display: none; margin-bottom: 10px; text-align: center; }
+        .stars-gold { color: #fbbf24; font-size: 0.85rem; margin-right: 2px; }
+        .review-display { background: #fffbeb; border: 1px dashed #fbbf24; border-radius: 10px; padding: 12px; margin-top: 15px; }
+        
+        .btn-chat-cust { 
+            background: #f1f5f9; 
+            border: none; 
+            padding: 5px 15px; 
+            border-radius: 50px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            color: var(--primary-dark);
+            transition: 0.2s;
+        }
+        .btn-chat-cust:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center text-white text-decoration-none" href="dashboard.html">
+                <i class="fas fa-arrow-left me-3"></i> 
+                <span>STORE ORDERS MASTER PANEL</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        
+        <div class="row mb-4 align-items-end g-3">
+            <div class="col-md-3">
+                <label class="filter-label">Search Orders</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="orderSearch" class="form-control border-start-0 rounded-end-pill shadow-sm" placeholder="Customer, Product, ID..." onkeyup="applyAllFilters()">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">Status Filter</label>
+                <select id="statusFilter" class="form-select rounded-pill shadow-sm" onchange="applyAllFilters()">
+                    <option value="ALL">All Status</option>
+                    <option value="PLACED">Placed</option>
+                    <option value="PAID">Paid (Online)</option>
+                    <option value="SHIPPED">Shipped</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">Start Date</label>
+                <input type="date" id="startDate" class="form-control rounded-pill shadow-sm" onchange="applyAllFilters()">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">End Date</label>
+                <input type="date" id="endDate" class="form-control rounded-pill shadow-sm" onchange="applyAllFilters()">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-light border rounded-pill flex-grow-1 fw-bold" onclick="resetFilters()">Reset All</button>
+                <button class="btn btn-primary rounded-pill px-4" onclick="fetchOrders()">
+                    <i class="fas fa-sync-alt" id="refreshIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="ordersList"></div>
+    </div>
+
+    <div class="modal fade" id="chatModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-dark text-white py-3">
+                    <h5 class="modal-title fw-bold" id="chatTitle">Customer Conversation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="chatWindow"></div>
+                    <div id="uploadStatus" class="upload-loader"><i class="fas fa-spinner fa-spin me-2"></i>Uploading Image...</div>
+                    <input type="file" id="sellerImageInput" style="display:none" accept="image/*" onchange="uploadAndSendImage(this)">
+                    <div class="input-group mt-3 border rounded-pill overflow-hidden">
+                        <button class="btn btn-light px-3" onclick="document.getElementById('sellerImageInput').click()"><i class="fas fa-camera"></i></button>
+                        <input type="text" id="chatInput" class="form-control border-0 shadow-none px-3" placeholder="Type message...">
+                        <button class="btn btn-dark px-4 fw-bold" onclick="sendMessage()">SEND</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+   const shopId = localStorage.getItem('shopId');
+    let allOrders = [];
+    let lastOrderCount = 0; 
+    let isInitialLoad = true;
+    let activeChatUserId = null;
+
+    const notificationSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!shopId) { window.location.href = 'login.html'; return; }
+        fetchOrders();
+
+        setInterval(() => {
+            silentFetchOrders();
+        }, 30000); 
+    });
+
+    async function silentFetchOrders() {
+        try {
+            const response = await fetch(`http://localhost:8080/api/orders/shop/${shopId}`);
+            const freshData = await response.json();
+            
+            if (freshData.length > lastOrderCount && !isInitialLoad) {
+                playNotification();
+                allOrders = freshData;
+                lastOrderCount = freshData.length;
+                applyAllFilters(); 
+                showToast("New Order Received!");
+            }
+        } catch (err) {
+            console.error("Auto-refresh error:", err);
+        }
+    }
+
+    function playNotification() {
+        notificationSound.play().catch(e => console.log("Audio play blocked."));
+    }
+
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed; top: 20px; right: 20px; 
+            background: #6366f1; color: white; 
+            padding: 15px 25px; border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 9999; font-weight: bold;
+            animation: slideIn 0.5s ease-out;
+        `;
+        toast.innerHTML = `<i class="fas fa-bell me-2"></i> ${msg}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    async function fetchOrders() {
+        const icon = document.getElementById('refreshIcon');
+        if(icon) icon.classList.add('rotating');
+        try {
+            const response = await fetch(`http://localhost:8080/api/orders/shop/${shopId}`);
+            allOrders = await response.json();
+            lastOrderCount = allOrders.length;
+            isInitialLoad = false;
+            applyAllFilters();
+        } catch (err) { 
+            console.error("Fetch Error:", err); 
+        } finally { 
+            if(icon) setTimeout(() => icon.classList.remove('rotating'), 600); 
+        }
+    }
+
+    function applyAllFilters() {
+        const search = document.getElementById('orderSearch').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        let filtered = allOrders.filter(o => {
+            const matchesSearch = (o.productName && o.productName.toLowerCase().includes(search)) || 
+                                 (o.customerName && o.customerName.toLowerCase().includes(search)) ||
+                                 (o.id && o.id.toString().includes(search));
+            
+            const matchesStatus = (status === 'ALL') || (o.status === status);
+            
+            let matchesDate = true;
+            const dateValue = o.orderDate || o.placedAt || o.createdAt;
+            if (dateValue) {
+                const oDate = new Date(dateValue).setHours(0,0,0,0);
+                if (start) {
+                    const sDate = new Date(start).setHours(0,0,0,0);
+                    if (oDate < sDate) matchesDate = false;
+                }
+                if (end) {
+                    const eDate = new Date(end).setHours(0,0,0,0);
+                    if (oDate > eDate) matchesDate = false;
+                }
+            }
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+        renderOrders(filtered.slice().reverse());
+    }
+
+    function resetFilters() {
+        document.getElementById('orderSearch').value = '';
+        document.getElementById('statusFilter').value = 'ALL';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        applyAllFilters();
+    }
+
+    function downloadInvoice(item) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text("STORE INVOICE", 15, 25);
+        doc.setTextColor(0,0,0);
+        doc.setFontSize(10);
+        doc.text(`Order ID: MS-${item.id}`, 15, 50);
+        const payType = item.paymentType || 'COD'; 
+        doc.text(`Payment Mode: ${payType.toUpperCase()}`, 15, 56);
+        doc.text(`Customer: ${item.customerName || 'Guest'}`, 120, 50);
+        doc.text(`Contact: ${item.customerMobile || 'N/A'}`, 120, 56);
+
+        doc.autoTable({
+            startY: 70,
+            head: [['Item Name', 'Quantity', 'Rate', 'Total Amount']],
+            body: [[item.productName, item.quantity, `INR ${item.price}`, `INR ${item.price * item.quantity}`]],
+            headStyles: { fillColor: [15, 23, 42] },
+            theme: 'grid'
+        });
+        doc.text("Thank you for shopping with us!", 105, doc.lastAutoTable.finalY + 20, {align: 'center'});
+        doc.save(`Invoice_MS_${item.id}.pdf`);
+    }
+
+    async function openChat(userId, name) {
+        if(!userId) { alert("User ID not found."); return; }
+        activeChatUserId = userId;
+        document.getElementById('chatTitle').innerText = "Chat with " + name;
+        new bootstrap.Modal(document.getElementById('chatModal')).show();
+        loadChatHistory();
+    }
+
+    async function loadChatHistory() {
+        if(!activeChatUserId) return;
+        try {
+            const res = await fetch(`http://localhost:8080/api/chat/history/${shopId}/${activeChatUserId}`);
+            const history = await res.json();
+            const win = document.getElementById('chatWindow');
+            win.innerHTML = history.map(m => `
+                <div class="msg ${m.senderType === 'SHOPKEEPER' ? 'msg-sent' : 'msg-received'}">
+                    ${m.imageUrl ? `<img src="${m.imageUrl}" style="max-width:200px; border-radius:10px;">` : ''}
+                    <div>${m.message}</div>
+                </div>`).join('');
+            win.scrollTop = win.scrollHeight;
+        } catch (err) { console.error(err); }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        if(!input.value.trim() || !activeChatUserId) return;
+        try {
+            await fetch(`http://localhost:8080/api/chat/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: input.value.trim() })
+            });
+            input.value = ''; loadChatHistory();
+        } catch (err) { console.error(err); }
+    }
+
+    async function uploadAndSendImage(input) {
+        if (!input.files[0] || !activeChatUserId) return;
+        document.getElementById('uploadStatus').style.display = 'block';
+        const fd = new FormData(); fd.append("file", input.files[0]);
+        try {
+            const up = await fetch('http://localhost:8080/api/chat/upload', { method: 'POST', body: fd });
+            const data = await up.json();
+            await fetch(`http://localhost:8080/api/chat/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: "Photo", imageUrl: data.url })
+            });
+            loadChatHistory();
+        } catch(e) { console.error(e); } finally { document.getElementById('uploadStatus').style.display = 'none'; input.value = ''; }
+    }
+
+    function renderOrders(orders) {
+        const list = document.getElementById('ordersList');
+        if(orders.length === 0) { list.innerHTML = '<div class="text-center py-5"><h5>No orders match filters.</h5></div>'; return; }
+
+        list.innerHTML = orders.map(item => {
+            const st = (item.status || 'PLACED').toUpperCase();
+            const rawPayment = item.paymentType || 'COD'; 
+            const pType = rawPayment.toUpperCase();
+            
+            let pClass = 'badge-cod';
+            if(pType.includes('ONLINE')) pClass = 'badge-online';
+            if(pType.includes('UPI')) pClass = 'badge-upi';
+
+            let stars = ''; 
+            if(item.rating) { 
+                for(let i=1; i<=5; i++) stars += `<i class="fa${i<=item.rating?'s':'r'} fa-star stars-gold"></i>`; 
+            }
+
+            return `
+            <div class="order-card shadow-sm">
+                <div class="row g-0">
+                    <div class="col-lg-4 section-box item-details">
+                        <div class="label-text">Order Items</div>
+                        <div class="value-text text-primary mb-3">${item.productName}</div>
+                        <div class="row g-2">
+                            <div class="col-6 border-end"><div class="label-text">Qty</div><div class="value-text">${item.quantity}</div></div>
+                            <div class="col-6 ps-2"><div class="label-text">Rate</div><div class="value-text">₹${item.price}</div></div>
+                        </div>
+                        ${item.rating ? `<div class="review-display"><div class="label-text">Rating</div><div>${stars}</div><small>"${item.review}"</small></div>` : ''}
+                    </div>
+                    
+                    <div class="col-lg-5 section-box bg-light border-end">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <div class="label-text">Customer Details</div>
+                                <div class="value-text">${item.customerName || 'Guest'}</div>
+                                <div class="small fw-bold text-success mt-1"><i class="fab fa-whatsapp me-1"></i>${item.customerMobile || 'N/A'}</div>
+                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat(${item.userId}, '${item.customerName || 'Customer'}')">
+                                    <i class="fas fa-comment-dots me-1"></i> Chat
+                                </button>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge-payment ${pClass}">${pType}</span>
+                                ${item.paymentId ? `<div style="font-size:10px; color:#64748b; margin-top:5px;">ID: ${item.paymentId}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="label-text">Delivery Address</div>
+                            <div class="small text-secondary">${item.address || 'No Address'}</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end mt-4">
+                            <div><div class="label-text">Total Amount</div><div class="value-text text-success" style="font-size:1.2rem">₹${item.price * item.quantity}</div></div>
+                            <div class="d-flex gap-2">
+                                <button class="btn-invoice btn-sm" onclick='downloadInvoice(${JSON.stringify(item)})'>
+                                    <i class="fas fa-file-invoice me-1"></i> Invoice
+                                </button>
+                                ${st === 'DELIVERED' ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWhatsApp('${item.customerMobile}', '${item.customerName}', '${item.productName}', '${item.id}')"><i class="fab fa-whatsapp"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 section-box text-center d-flex flex-column justify-content-center">
+                        <div class="mb-3"><div class="label-text">Order Status</div><span class="status-pill st-${st.toLowerCase()}">${st}</span></div>
+                        <div class="d-grid gap-2 px-3">
+                            ${(st === 'PLACED' || st === 'PAID') ? `
+                                <button class="btn btn-dark btn-sm rounded-pill py-2" onclick="updateStatus(${item.id}, 'SHIPPED')">Ship Order</button>
+                                <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="updateStatus(${item.id}, 'CANCELLED')">Cancel</button>
+                            ` : ''}
+                            ${st === 'SHIPPED' ? `<button class="btn btn-success btn-sm rounded-pill py-2" onclick="updateStatus(${item.id}, 'DELIVERED')">Mark Delivered</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function updateStatus(id, s) {
+        if(!confirm(`Confirm status update to ${s}?`)) return;
+        try {
+            const res = await fetch(`http://localhost:8080/api/orders/item/${id}/status?status=${s}`, { method: 'PUT' });
+            if(res.ok) fetchOrders();
+            else alert("Error updating status");
+        } catch (e) { console.error(e); }
+    }
+
+    function sendWhatsApp(mobile, name, product, orderId) {
+        if(!mobile || mobile === 'N/A') return;
+        const phone = mobile.replace(/\D/g, '').length <= 10 ? '91'+mobile.replace(/\D/g, '') : mobile.replace(/\D/g, '');
+        const msg = `Namaste ${name}! Your order MS-${orderId} (${product}) has been delivered successfully.`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+</script>
+</body>
+</html>

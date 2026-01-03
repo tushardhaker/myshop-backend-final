@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Shopping Cart | MyShop.pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root { 
+            --primary: #131921; 
+            --accent: #febd69;
+            --bg-gray: #eaeded; 
+            --link-blue: #007185;
+            --price-red: #B12704;
+            --text-main: #0f1111;
+        }
+        
+        body { background-color: var(--bg-gray); font-family: 'Inter', sans-serif; color: var(--text-main); }
+        
+        /* Navbar */
+        .navbar { background-color: var(--primary); padding: 12px 0; border-bottom: 4px solid var(--accent); }
+        .navbar-brand { font-size: 24px; letter-spacing: -0.5px; }
+
+        /* Cart Layout */
+        .cart-container { background: white; padding: 30px; border-radius: 4px; }
+        
+        /* Item Row Styling */
+        .item-row { border-bottom: 1px solid #e7e7e7; padding: 25px 0; display: flex; align-items: flex-start; }
+        .item-row:last-child { border-bottom: none; }
+        
+        .product-img-box { width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
+        .product-img { max-height: 100%; max-width: 100%; object-fit: contain; }
+
+        .product-name { 
+            color: var(--link-blue); font-size: 1.3rem; font-weight: 600; 
+            text-decoration: none; line-height: 1.3; margin-bottom: 8px; display: block; 
+        }
+        .product-name:hover { color: #c45500; text-decoration: underline; }
+        
+        .stock-status { color: #007600; font-size: 13px; font-weight: 600; }
+        .shop-id { color: #565959; font-size: 13px; }
+
+        /* Quantity & Actions */
+        .action-bar { display: flex; align-items: center; gap: 15px; margin-top: 15px; }
+        .qty-select-wrapper { 
+            background: #f0f2f2; border: 1px solid #d5d9d9; border-radius: 8px; 
+            padding: 4px 10px; box-shadow: 0 2px 5px rgba(213,217,217,0.5); 
+        }
+        .qty-select { border: none; background: transparent; font-weight: 600; outline: none; cursor: pointer; }
+        
+        .action-link { color: var(--link-blue); font-size: 13px; cursor: pointer; text-decoration: none; padding-left: 15px; border-left: 1px solid #ddd; }
+        .action-link:hover { text-decoration: underline; color: #c45500; }
+
+        .price-text { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
+
+        /* Summary Sidebar */
+        .summary-box { background: white; padding: 25px; border-radius: 4px; position: sticky; top: 100px; }
+        .free-delivery-text { color: #007600; font-size: 12px; line-height: 1.4; }
+        
+        .btn-checkout { 
+            background: linear-gradient(to bottom, #f7dfa1, #f0c14b);
+            border: 1px solid #a88734; border-radius: 8px; 
+            padding: 10px; width: 100%; font-weight: 600; font-size: 14px; color: #111;
+            box-shadow: 0 2px 5px rgba(213,217,217,0.2); transition: 0.2s;
+        }
+        .btn-checkout:hover { background: linear-gradient(to bottom, #f5d172, #eeb933); }
+        .btn-checkout:disabled { background: #f1f1f1; border-color: #ddd; color: #999; cursor: not-allowed; }
+
+        /* Empty State */
+        .empty-cart-card { text-align: center; padding: 80px 40px; background: white; border-radius: 4px; }
+        .empty-icon { font-size: 80px; color: #e1e1e1; margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar sticky-top mb-4">
+        <div class="container d-flex justify-content-between align-items-center px-4">
+            <a class="navbar-brand fw-bold text-white" href="customer.html">
+                MyShop<span class="text-warning">.pro</span>
+            </a>
+            <div class="text-white small d-none d-md-block">
+                <i class="fas fa-lock me-2 text-warning"></i> Secure SSL Encryption
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-lg-9">
+                <div class="cart-container" id="mainCartContent">
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <h2 class="fw-bold m-0">Shopping Cart</h2>
+                        <span class="text-muted small">Price</span>
+                    </div>
+                    <hr class="mt-2 mb-0">
+                    
+                    <div id="itemsContainer">
+                        </div>
+
+                    <div class="text-end mt-4 pt-3 border-top">
+                        <h5 class="m-0">Subtotal (<span class="totalItemsCount">0</span> items): <span class="fw-bold">₹<span class="grandTotalAmount">0.00</span></span></h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="summary-box shadow-sm">
+                    <div class="free-delivery-text mb-3">
+                        <i class="fas fa-check-circle me-1"></i> 
+                        Your order qualifies for <b>FREE Delivery</b>. Select this option at checkout.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <span class="fs-5">Subtotal (<span class="totalItemsCount">0</span> items):</span>
+                        <div class="fw-bold fs-3">₹<span class="grandTotalAmount">0.00</span></div>
+                    </div>
+
+                    <div class="form-check mb-3 small">
+                        <input class="form-check-input" type="checkbox" id="giftCheck">
+                        <label class="form-check-label" for="giftCheck">This order contains a gift</label>
+                    </div>
+
+                    <button class="btn btn-checkout mb-3" id="checkoutBtn" onclick="proceedToBuy()">
+                        Proceed to Checkout
+                    </button>
+
+                    <div class="accordion accordion-flush border rounded" id="promoAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 small fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#promoInput">
+                                    Apply Promo Code
+                                </button>
+                            </h2>
+                            <div id="promoInput" class="accordion-collapse collapse">
+                                <div class="accordion-body p-2 d-flex gap-1">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Code">
+                                    <button class="btn btn-dark btn-sm">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let cart = JSON.parse(localStorage.getItem('myShopCart')) || [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCart();
+    });
+
+    function renderCart() {
+        const itemsContainer = document.getElementById('itemsContainer');
+        const countElements = document.querySelectorAll('.totalItemsCount');
+        const totalElements = document.querySelectorAll('.grandTotalAmount');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+
+        if (cart.length === 0) {
+            document.getElementById('mainCartContent').innerHTML = `
+                <div class="empty-cart-card">
+                    <div class="empty-icon"><i class="fas fa-cart-arrow-down"></i></div>
+                    <h2 class="fw-bold">Your Cart is empty</h2>
+                    <p class="text-muted mb-4">Your Shopping Cart lives to serve. Give it purpose — fill it with groceries, electronics, and more.</p>
+                    <a href="customer.html" class="btn btn-warning px-5 py-2 fw-bold rounded-pill shadow-sm">Continue Shopping</a>
+                </div>`;
+            countElements.forEach(el => el.innerText = "0");
+            totalElements.forEach(el => el.innerText = "0.00");
+            checkoutBtn.disabled = true;
+            return;
+        }
+
+        let htmlContent = '';
+        let totalQty = 0;
+        let totalPrice = 0;
+
+        cart.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            totalQty += item.quantity;
+            totalPrice += itemTotal;
+
+            htmlContent += `
+                <div class="item-row row mx-0">
+                    <div class="col-md-3 col-4 p-0">
+                        <div class="product-img-box">
+                            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" class="product-img" alt="${item.name}">
+                        </div>
+                    </div>
+                    <div class="col-md-7 col-8 ps-md-4">
+                        <a href="#" class="product-name">${item.name}</a>
+                        <div class="shop-id mb-1">Brand: <span class="text-info fw-bold">#${item.shopId}</span></div>
+                        <div class="stock-status mb-2">In Stock</div>
+                        
+                        <div class="action-bar">
+                            <div class="qty-select-wrapper">
+                                <span class="small text-muted me-1">Qty:</span>
+                                <select onchange="updateQuantity(${index}, this.value)" class="qty-select">
+                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${n === item.quantity ? 'selected' : ''}>${n}</option>`).join('')}
+                                </select>
+                            </div>
+                            <span class="action-link" onclick="removeItem(${index})"><i class="fas fa-trash-alt me-1"></i>Delete</span>
+                            <span class="action-link d-none d-md-inline">Save for later</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span class="price-text">₹${item.price.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        itemsContainer.innerHTML = htmlContent;
+        countElements.forEach(el => el.innerText = totalQty);
+        totalElements.forEach(el => el.innerText = totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        checkoutBtn.disabled = false;
+    }
+
+    function updateQuantity(index, newQty) {
+        cart[index].quantity = parseInt(newQty);
+        saveAndRefresh();
+    }
+
+    function removeItem(index) {
+        if(confirm("Remove this item from your basket?")) {
+            cart.splice(index, 1);
+            saveAndRefresh();
+        }
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('myShopCart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    async function proceedToBuy() {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            alert("Please login to place an order.");
+            window.location.href = 'login.html';
+            return;
+        }
+        window.location.href = 'checkout.html'; 
+    }
+</script>
+</body>
+</html>
