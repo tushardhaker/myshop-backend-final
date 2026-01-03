@@ -22,14 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.myshop.myshopbackend.model.Order;
 import com.myshop.myshopbackend.model.OrderItem;
-import com.myshop.myshopbackend.model.Product;
 import com.myshop.myshopbackend.repository.OrderItemRepository;
 import com.myshop.myshopbackend.repository.OrderRepository;
 import com.myshop.myshopbackend.repository.ProductRepository;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app", "http://localhost:5500",
+        "http://127.0.0.1:5500" }, allowCredentials = "true")
 public class OrderController {
 
     @Autowired
@@ -64,16 +64,16 @@ public class OrderController {
         try {
             order.setOrderDate(LocalDateTime.now());
             order.setStatus("PLACED");
+
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
-                    Optional<Product> productOpt = productRepo.findByNameIgnoreCase(item.getProductName());
-                    if (productOpt.isPresent()) {
-                        Product product = productOpt.get();
-                        if (product.getStock() >= item.getQuantity()) {
-                            product.setStock(product.getStock() - item.getQuantity());
-                            productRepo.save(product);
+                    // Stock update logic
+                    productRepo.findByNameIgnoreCase(item.getProductName()).ifPresent(p -> {
+                        if (p.getStock() >= item.getQuantity()) {
+                            p.setStock(p.getStock() - item.getQuantity());
+                            productRepo.save(p);
                         }
-                    }
+                    });
                     item.setOrder(order);
                     item.setStatus("PLACED");
                     item.setPlacedAt(LocalDateTime.now());
@@ -81,43 +81,23 @@ public class OrderController {
             }
             return ResponseEntity.ok(orderRepo.save(order));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body("Order Error: " + e.getMessage());
         }
     }
 
     @PutMapping("/item/{itemId}/status")
     @Transactional
     public ResponseEntity<?> updateItemStatus(@PathVariable Long itemId, @RequestParam String status) {
-        Optional<OrderItem> itemOpt = orderItemRepo.findById(itemId);
-        if (itemOpt.isPresent()) {
-            OrderItem item = itemOpt.get();
-            String oldStatus = item.getStatus();
+        return orderItemRepo.findById(itemId).map(item -> {
             item.setStatus(status.toUpperCase());
-
             LocalDateTime now = LocalDateTime.now();
-            if ("SHIPPED".equalsIgnoreCase(status))
-                item.setShippedAt(now);
-            else if ("DELIVERED".equalsIgnoreCase(status))
+            if ("DELIVERED".equalsIgnoreCase(status))
                 item.setDeliveredAt(now);
-            else if ("CANCELLED".equalsIgnoreCase(status))
+            if ("CANCELLED".equalsIgnoreCase(status))
                 item.setCancelledAt(now);
-            else if ("RETURNED".equalsIgnoreCase(status))
-                item.setReturnedAt(now);
-
-            if (!"CANCELLED".equalsIgnoreCase(oldStatus) && !"RETURNED".equalsIgnoreCase(oldStatus)) {
-                if ("CANCELLED".equalsIgnoreCase(status) || "RETURNED".equalsIgnoreCase(status)) {
-                    Optional<Product> productOpt = productRepo.findByNameIgnoreCase(item.getProductName());
-                    if (productOpt.isPresent()) {
-                        Product product = productOpt.get();
-                        product.setStock(product.getStock() + item.getQuantity());
-                        productRepo.save(product);
-                    }
-                }
-            }
             orderItemRepo.save(item);
             return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/shop/{shopId}")
@@ -134,27 +114,13 @@ public class OrderController {
             map.put("rating", item.getRating());
             map.put("review", item.getReview());
             map.put("placedAt", item.getPlacedAt());
-            map.put("shippedAt", item.getShippedAt());
-            map.put("deliveredAt", item.getDeliveredAt());
 
             if (item.getOrder() != null) {
                 map.put("customerName", item.getOrder().getCustomerName());
                 map.put("customerMobile", item.getOrder().getMobile());
-                map.put("orderDate", item.getOrder().getOrderDate());
                 map.put("address", item.getOrder().getAddress());
-                map.put("userId", item.getOrder().getUserId());
-
-                // FIXED: Adding both paymentType and paymentId to the response map
                 map.put("paymentType", item.getOrder().getPaymentType());
-                map.put("paymentMethod", item.getOrder().getPaymentMethod());
-                map.put("paymentId", item.getOrder().getPaymentId()); // <--- YE MISSING THA
-
-                // Sync status: Agar main Order "PAID" hai toh item status ko bhi "PAID" ki
-                // tarah treat karein
-                if ("PAID".equalsIgnoreCase(item.getOrder().getStatus())
-                        && "PLACED".equalsIgnoreCase(item.getStatus())) {
-                    map.put("status", "PAID");
-                }
+                map.put("paymentId", item.getOrder().getPaymentId());
             }
             response.add(map);
         }
