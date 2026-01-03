@@ -29,7 +29,6 @@ import com.myshop.myshopbackend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/users")
-// YAHAN CHANGE KIYA HAI: "*" hata kar explicit origins allow kiye hain taaki Credentials error na aaye
 @CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"}, allowCredentials = "true")
 public class UserController {
 
@@ -170,7 +169,10 @@ public class UserController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String identifier = request.get("identifier");
         User user = userRepo.findByEmailOrMobile(identifier);
-        if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found!");
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found!");
+        }
         
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
         user.setOtp(otp);
@@ -185,9 +187,18 @@ public class UserController {
             message.setSubject("OTP Reset | MyShop");
             message.setText("Your OTP for password reset is: " + otp);
             mailSender.send(message);
-            return ResponseEntity.ok("OTP Sent");
+            
+            // Map bhej rahe hain taaki frontend JSON parse kar sake
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "OTP Sent Successfully");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.ok("OTP Generated (Mail Fail, check terminal)");
+            e.printStackTrace();
+            // Agar mail fail ho jaye, tab bhi message JSON format mein bhein
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "OTP Generated but Mail failed. Check terminal.");
+            errorResponse.put("otp", otp); // Development ke liye OTP bhej rahe hain
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -198,7 +209,7 @@ public class UserController {
         String newPassword = request.get("newPassword");
         User user = userRepo.findByEmailOrMobile(identifier);
         
-        if (user != null && otp.equals(user.getOtp()) && user.getOtpExpiry().isAfter(LocalDateTime.now())) {
+        if (user != null && otp != null && otp.equals(user.getOtp()) && user.getOtpExpiry().isAfter(LocalDateTime.now())) {
             user.setPassword(newPassword);
             user.setOtp(null);
             user.setOtpExpiry(null);
