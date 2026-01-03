@@ -25,16 +25,15 @@ import com.myshop.myshopbackend.repository.ChatMessageRepository;
 
 @RestController
 @RequestMapping("/api/chat")
-// NAYA: Isse hum SecurityConfig se manage karenge, isliye yahan broad permission di hai 
-// taaki production par error na aaye.
-@CrossOrigin(origins = "*")
+// Vercel aur local dono ko allow karne ke liye origins specify kar diye hain
+@CrossOrigin(origins = {"https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"})
 public class ChatController {
 
     @Autowired
     private ChatMessageRepository chatRepo;
 
     // Isse hum Render ka URL environment variable se uthayenge
-    @Value("${app.backend.url:http://localhost:8080}")
+    @Value("${app.backend.url:https://myshop-backend-final-1.onrender.com}")
     private String backendUrl;
 
     @PostMapping("/send")
@@ -55,7 +54,7 @@ public class ChatController {
             Files.createDirectories(path.getParent());
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
 
-            // NAYA: Ab ye dynamic backendUrl use karega (Render ka link)
+            // Ab ye dynamic backendUrl use karega (Render ka link)
             String fileUrl = backendUrl + "/uploads/" + fileName;
             return ResponseEntity.ok(Map.of("url", fileUrl));
         } catch (Exception e) {
@@ -63,4 +62,3 @@ public class ChatController {
         }
     }
 }
-

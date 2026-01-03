@@ -1,6 +1,7 @@
 package com.myshop.myshopbackend.config;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +16,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Isse hum Render ka URL environment variable se uthayenge
-    @Value("${app.backend.url:http://localhost:8080}")
+    // Render Backend URL (Environment variable se uthayega)
+    @Value("${app.backend.url:https://myshop-backend-final-1.onrender.com}")
     private String backendUrl;
 
     @Bean
@@ -46,12 +47,11 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                // Render ke URL par redirect karega
                 .defaultSuccessUrl(backendUrl + "/api/users/loginSuccess", true)
             )
             .logout(logout -> logout
-                // Logout ke baad local frontend par bhejega
-                .logoutSuccessUrl("http://127.0.0.1:5500/frontend/login.html")
+                // Logout ke baad aapki Vercel live site par bhejega
+                .logoutSuccessUrl("https://myshop-backend-final.vercel.app/index.html")
                 .permitAll()
             );
 
@@ -62,10 +62,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-            backendUrl,              // Dynamic Render Backend URL
+            backendUrl,                                // Render URL
+            "https://myshop-backend-final.vercel.app", // Aapka Vercel Frontend URL
             "http://127.0.0.1:5500", 
             "http://localhost:5500",
-            "http://localhost:5173"  // Vite/React ke liye
+            "http://localhost:5173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

@@ -9,8 +9,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // Render ka URL environment variable se uthayenge
-    @Value("${app.backend.url:http://localhost:8080}")
+    // Render ka URL (Default set to your Render live link)
+    @Value("${app.backend.url:https://myshop-backend-final-1.onrender.com}")
     private String backendUrl;
 
     @Override
@@ -25,10 +25,11 @@ public class WebConfig implements WebMvcConfigurer {
         // Yeh setting frontend ko backend se connect karne ki permission deti hai
         registry.addMapping("/**")
                 .allowedOrigins(
-                    backendUrl,              // Dynamic Render Backend URL
+                    backendUrl,                                // Render Backend URL
+                    "https://myshop-backend-final.vercel.app", // Aapka Vercel Frontend URL
                     "http://localhost:5500", 
                     "http://127.0.0.1:5500",
-                    "http://localhost:5173"  // React/Vite ke liye extra safety
+                    "http://localhost:5173"                    // React/Vite ke liye
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
