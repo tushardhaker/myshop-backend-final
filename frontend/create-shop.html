@@ -72,7 +72,7 @@
             };
 
             try {
-                const response = await fetch('http://localhost:8080/api/shops/create', {
+                const response = await fetch('https://myshop-backend-final-1.onrender.com/api/shops/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(shopData)

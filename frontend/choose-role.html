@@ -62,7 +62,7 @@
             try {
                 console.log(`Sending Role: ${selectedRole} for User ID: ${userId}`);
                 
-                const res = await fetch('http://localhost:8080/api/users/update-role', {
+                const res = await fetch('https://myshop-backend-final-1.onrender.com/api/users/update-role', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: userId, role: selectedRole })

@@ -183,7 +183,7 @@
 
     async function fetchOrders() {
         try {
-            const response = await fetch(`http://localhost:8080/api/orders/user/${userId}`);
+            const response = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/user/${userId}`);
             allOrders = await response.json();
             renderOrders(allOrders.slice().reverse());
         } catch (err) {
@@ -306,9 +306,9 @@
         const formData = new FormData();
         formData.append("file", input.files[0]);
         try {
-            const res = await fetch('http://localhost:8080/api/chat/upload', { method: 'POST', body: formData });
+            const res = await fetch('https://myshop-backend-final-1.onrender.com/api/chat/upload', { method: 'POST', body: formData });
             const data = await res.json();
-            await fetch(`http://localhost:8080/api/chat/send`, {
+            await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ senderId: userId, receiverId: activeChatShopId, senderType: 'CUSTOMER', message: "Sent an attachment", imageUrl: data.url })
@@ -320,7 +320,7 @@
 
     async function loadChatHistory() {
         if(!activeChatShopId) return;
-        const res = await fetch(`http://localhost:8080/api/chat/history/${userId}/${activeChatShopId}`);
+        const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/history/${userId}/${activeChatShopId}`);
         const history = await res.json();
         const win = document.getElementById('chatWindow');
         win.innerHTML = history.map(m => `
@@ -337,7 +337,7 @@
         const text = input.value.trim();
         if(!text || !activeChatShopId) return;
         try {
-            const response = await fetch(`http://localhost:8080/api/chat/send`, {
+            const response = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ senderId: userId, receiverId: activeChatShopId, senderType: 'CUSTOMER', message: text })
@@ -363,7 +363,7 @@
         const itemId = document.getElementById('targetItemId').value;
         const btn = event.target;
         btn.disabled = true; btn.innerText = "Posting...";
-        await fetch(`http://localhost:8080/api/orders/item/${itemId}/review`, {
+        await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/item/${itemId}/review`, {
             method: 'PUT', headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ rating: selectedRating, review: document.getElementById('reviewComment').value })
         });
@@ -378,7 +378,7 @@
 
     async function cancelOrderItem(id) { 
         if(confirm("Are you sure you want to cancel this item?")) { 
-            await fetch(`http://localhost:8080/api/orders/item/${id}/status?status=CANCELLED`, {method:'PUT'}); 
+            await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/item/${id}/status?status=CANCELLED`, {method:'PUT'}); 
             fetchOrders(); 
         } 
     }

@@ -78,7 +78,7 @@
 
         async function loadCharts() {
             try {
-                const response = await fetch(`http://localhost:8080/api/orders/shop/${shopId}`);
+                const response = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/shop/${shopId}`);
                 const data = await response.json();
                 
                 // Hum sirf "DELIVERED" orders ka chart banayenge

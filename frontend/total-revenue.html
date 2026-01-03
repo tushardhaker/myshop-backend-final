@@ -213,7 +213,7 @@
         async function fetchRevenueData() {
             try {
                 // UI feedback: Button animation trigger (Optional)
-                const res = await fetch(`http://localhost:8080/api/orders/shop/${shopId}`);
+                const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/shop/${shopId}`);
                 if (!res.ok) throw new Error("API Error");
                 const items = await res.json();
 

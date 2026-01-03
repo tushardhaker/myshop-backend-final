@@ -197,7 +197,7 @@
 
     async function fetchAllProducts() {
         try {
-            const response = await fetch('http://localhost:8080/api/products/all');
+            const response = await fetch('https://myshop-backend-final-1.onrender.com/api/products/all');
             allProducts = response.ok ? await response.json() : dummyProducts;
         } catch (err) { allProducts = dummyProducts; }
         displayProducts(allProducts);
