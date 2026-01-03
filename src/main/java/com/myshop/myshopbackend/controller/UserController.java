@@ -1,5 +1,7 @@
 package com.myshop.myshopbackend.controller;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +43,7 @@ public class UserController {
 
     private final String FRONTEND_BASE = "http://127.0.0.1:5500/frontend/";
 
+    // 1. Google Login & Registration Success Logic
     @GetMapping("/loginSuccess")
     public RedirectView getLoginInfo(@AuthenticationPrincipal OAuth2User principal) {
         if (principal == null) {
@@ -51,6 +54,7 @@ public class UserController {
         String name = principal.getAttribute("name");
         User user = userRepo.findByEmail(email);
 
+        // Naya user hai ya role select nahi kiya
         if (user == null || "NEW_USER".equals(user.getRole())) {
             if (user == null) {
                 user = new User();
@@ -63,6 +67,7 @@ public class UserController {
             return new RedirectView(FRONTEND_BASE + "choose-role.html?userId=" + user.getId());
         }
 
+        // Purana user hai, role pata hai
         String targetPage = "customer.html";
         String extraParams = "";
 
@@ -76,17 +81,21 @@ public class UserController {
             }
         }
 
-        String finalUrl = FRONTEND_BASE + targetPage + "?id=" + user.getId() + "&name=" + user.getName().replace(" ", "%20") + "&role=" + user.getRole() + extraParams;
-        return new RedirectView(finalUrl);
+        try {
+            String encodedName = URLEncoder.encode(user.getName(), StandardCharsets.UTF_8.toString());
+            String finalUrl = FRONTEND_BASE + targetPage + "?id=" + user.getId() + 
+                              "&name=" + encodedName + "&role=" + user.getRole() + extraParams;
+            return new RedirectView(finalUrl);
+        } catch (Exception e) {
+            return new RedirectView(FRONTEND_BASE + targetPage + "?id=" + user.getId());
+        }
     }
 
+    // 2. Role Update (After Google Registration)
     @PostMapping("/update-role")
     public ResponseEntity<?> updateRole(@RequestBody Map<String, Object> request) {
         try {
-            Object idObj = request.get("userId");
-            if (idObj == null) return ResponseEntity.badRequest().body("User ID is missing");
-            
-            Long userId = Long.parseLong(idObj.toString());
+            Long userId = Long.parseLong(request.get("userId").toString());
             String selectedRole = (String) request.get("role");
 
             Optional<User> userOpt = userRepo.findById(userId);
@@ -95,11 +104,11 @@ public class UserController {
                 user.setRole(selectedRole.toUpperCase());
                 userRepo.save(user);
                 
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", user.getId());
-                response.put("name", user.getName());
-                response.put("role", user.getRole());
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(Map.of(
+                    "id", user.getId(),
+                    "name", user.getName(),
+                    "role", user.getRole()
+                ));
             }
             return ResponseEntity.status(404).body("User not found");
         } catch (Exception e) {
@@ -107,66 +116,37 @@ public class UserController {
         }
     }
 
+    // 3. Normal Login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
-        try {
-            String identifier = loginRequest.get("identifier");
-            String password = loginRequest.get("password");
-
-            if (identifier == null || password == null) {
-                return ResponseEntity.badRequest().body("Identifier or Password missing");
-            }
-
-            User user = userRepo.findByEmailOrMobile(identifier);
+        User user = userRepo.findByEmailOrMobile(loginRequest.get("identifier"));
+        if (user != null && user.getPassword().equals(loginRequest.get("password"))) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", user.getId());
+            response.put("name", user.getName());
+            response.put("role", user.getRole());
             
-            if (user != null && user.getPassword().equals(password)) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", user.getId());
-                response.put("name", user.getName());
-                response.put("role", user.getRole());
-                
-                if ("SHOPKEEPER".equalsIgnoreCase(user.getRole())) {
-                    response.put("shopId", shopRepo.findByOwnerId(user.getId()).map(Shop::getId).orElse(null));
-                }
-                return ResponseEntity.ok(response);
+            if ("SHOPKEEPER".equalsIgnoreCase(user.getRole())) {
+                response.put("shopId", shopRepo.findByOwnerId(user.getId()).map(Shop::getId).orElse(null));
             }
-            return ResponseEntity.status(401).body("Invalid credentials");
-        } catch (Exception e) {
-            e.printStackTrace(); 
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.ok(response);
         }
+        return ResponseEntity.status(401).body("Invalid credentials");
     }
 
+    // 4. Normal Registration
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            if (userRepo.findByEmail(user.getEmail()) != null) {
-                return ResponseEntity.badRequest().body("Error: Email already registered!");
-            }
-
-            if (user.getMobile() != null && !user.getMobile().isEmpty()) {
-                if (userRepo.findByMobile(user.getMobile()) != null) {
-                    return ResponseEntity.badRequest().body("Error: Mobile number already registered!");
-                }
-            }
-
-            if (user.getRole() == null || user.getRole().isEmpty()) {
-                user.setRole("CUSTOMER");
-            } else {
-                user.setRole(user.getRole().toUpperCase());
-            }
-
-            User savedUser = userRepo.save(user);
-            return ResponseEntity.ok(savedUser);
-
-        } catch (Exception e) {
-            e.printStackTrace(); 
-            return ResponseEntity.status(500).body("Registration Failed: " + e.getMessage());
+        if (userRepo.findByEmail(user.getEmail()) != null) {
+            return ResponseEntity.badRequest().body("Error: Email already registered!");
         }
+        if (user.getRole() == null) user.setRole("CUSTOMER");
+        user.setRole(user.getRole().toUpperCase());
+        return ResponseEntity.ok(userRepo.save(user));
     }
 
-   // UserController.java ke forgot-password block ko isse replace karein
-@PostMapping("/forgot-password")
+    // 5. Forgot Password (OTP Hybrid Logic)
+    @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String identifier = request.get("identifier");
         User user = userRepo.findByEmailOrMobile(identifier);
@@ -175,32 +155,27 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found!"));
         }
         
-        // 1. OTP Generate aur Save karein
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
         userRepo.save(user);
 
-        System.out.println("DEBUG: Generated OTP for " + identifier + " is: " + otp);
+        System.out.println("DEBUG: OTP for " + identifier + " is: " + otp);
 
         try {
-            // 2. Mail bhejne ki koshish
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(user.getEmail());
-            message.setSubject("Password Reset OTP - MyShop");
+            message.setSubject("Reset Your Password - MyShop");
             message.setText("Your OTP is: " + otp);
             mailSender.send(message);
             
-            return ResponseEntity.ok(Map.of("message", "OTP sent to your email successfully!"));
-            
+            return ResponseEntity.ok(Map.of("message", "Email Sent"));
         } catch (Exception e) {
-            // 3. AGAR MAIL FAIL HUA: Toh error mat do, response mein OTP bhej do
-            System.err.println("Mail sending failed, providing OTP in response: " + e.getMessage());
-            
-            Map<String, String> fallbackResponse = new HashMap<>();
-            fallbackResponse.put("message", "Mail Server Connection Failed! (Dev Mode)");
-            fallbackResponse.put("otp", otp); // Frontend isse pakad lega
-            return ResponseEntity.ok(fallbackResponse);
+            // Render block karega toh ye wala response jayega
+            return ResponseEntity.ok(Map.of(
+                "message", "Mail Server Offline",
+                "otp", otp 
+            ));
         }
     }
 
@@ -211,7 +186,6 @@ public class UserController {
         String newPassword = request.get("newPassword");
         
         User user = userRepo.findByEmailOrMobile(identifier);
-        
         if (user != null && otp != null && otp.equals(user.getOtp())) {
             if (user.getOtpExpiry().isAfter(LocalDateTime.now())) {
                 user.setPassword(newPassword);
@@ -219,9 +193,8 @@ public class UserController {
                 user.setOtpExpiry(null);
                 userRepo.save(user);
                 return ResponseEntity.ok(Map.of("message", "Success"));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of("message", "OTP Expired!"));
             }
+            return ResponseEntity.badRequest().body(Map.of("message", "OTP Expired!"));
         }
         return ResponseEntity.badRequest().body(Map.of("message", "Invalid OTP!"));
     }
