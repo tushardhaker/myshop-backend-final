@@ -108,27 +108,68 @@ public class UserController {
         }
     }
 
-    @PostMapping("/login")
+   @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
-        User user = userRepo.findByEmailOrMobile(loginRequest.get("identifier"));
-        if (user != null && user.getPassword().equals(loginRequest.get("password"))) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", user.getId());
-            response.put("name", user.getName());
-            response.put("role", user.getRole());
-            if ("SHOPKEEPER".equalsIgnoreCase(user.getRole())) {
-                response.put("shopId", shopRepo.findByOwnerId(user.getId()).map(Shop::getId).orElse(null));
+        try {
+            String identifier = loginRequest.get("identifier");
+            String password = loginRequest.get("password");
+
+            if (identifier == null || password == null) {
+                return ResponseEntity.badRequest().body("Identifier or Password missing");
             }
-            return ResponseEntity.ok(response);
+
+            User user = userRepo.findByEmailOrMobile(identifier);
+            
+            // Null check taaki empty table par crash na ho
+            if (user != null && user.getPassword().equals(password)) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", user.getId());
+                response.put("name", user.getName());
+                response.put("role", user.getRole());
+                
+                if ("SHOPKEEPER".equalsIgnoreCase(user.getRole())) {
+                    response.put("shopId", shopRepo.findByOwnerId(user.getId()).map(Shop::getId).orElse(null));
+                }
+                return ResponseEntity.ok(response);
+            }
+            return ResponseEntity.status(401).body("Invalid credentials");
+        } catch (Exception e) {
+            // Logs mein error dikhega
+            e.printStackTrace(); 
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
-        return ResponseEntity.status(401).body("Invalid credentials");
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        if (userRepo.findByEmail(user.getEmail()) != null)
-            return ResponseEntity.badRequest().body("Exists");
-        return ResponseEntity.ok(userRepo.save(user));
+        try {
+            // 1. Check if Email exists
+            if (userRepo.findByEmail(user.getEmail()) != null) {
+                return ResponseEntity.badRequest().body("Error: Email already registered!");
+            }
+
+            // 2. Check if Mobile exists (Sirf agar mobile null nahi hai)
+            if (user.getMobile() != null && !user.getMobile().isEmpty()) {
+                if (userRepo.findByMobile(user.getMobile()) != null) {
+                    return ResponseEntity.badRequest().body("Error: Mobile number already registered!");
+                }
+            }
+
+            // 3. Default Role set karein agar frontend se nahi aaya
+            if (user.getRole() == null || user.getRole().isEmpty()) {
+                user.setRole("CUSTOMER");
+            } else {
+                user.setRole(user.getRole().toUpperCase());
+            }
+
+            // 4. Save User
+            User savedUser = userRepo.save(user);
+            return ResponseEntity.ok(savedUser);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Ye Render logs mein error dikhayega
+            return ResponseEntity.status(500).body("Registration Failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/forgot-password")
