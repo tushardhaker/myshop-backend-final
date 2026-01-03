@@ -39,7 +39,7 @@ public class SecurityConfig {
                     "/login/**", 
                     "/oauth2/**",
                     "/api/payment/**",
-                    "/error" // Isse allow karna zaroori hai taaki error message dikhe
+                    "/error"
                 ).permitAll() 
                 .anyRequest().authenticated()
             )
@@ -55,25 +55,25 @@ public class SecurityConfig {
     }
 
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    
-    // '*' ki jagah allowedOriginPatterns use karne se error chala jayega
-    config.setAllowedOriginPatterns(List.of(
-        "https://myshop-backend-final-1.onrender.com",
-        "https://myshop-backend-final.vercel.app",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "http://localhost:5173"
-    ));
-    
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-    config.setAllowCredentials(true); // Iske saath allowedOrigins "*" nahi ho sakta tha
-    config.setMaxAge(3600L);
-    
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-}
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        
+        // Patterns use karne se "allowCredentials(true)" ke saath "*" ka error nahi aata
+        config.setAllowedOriginPatterns(List.of(
+            "https://myshop-backend-final-1.onrender.com",
+            "https://myshop-backend-final.vercel.app",
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "http://localhost:5173"
+        ));
+        
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 }
