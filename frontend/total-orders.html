@@ -88,7 +88,6 @@
         .st-shipped { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
         .st-delivered { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
         .st-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-        .st-returned { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
         .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; }
 
@@ -219,7 +218,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const shopId = localStorage.getItem('shopId') || "1"; 
+    const shopId = localStorage.getItem('shopId') || "1";
     let allOrders = [];
     let lastOrderCount = 0; 
     let isInitialLoad = true;
@@ -255,11 +254,8 @@
             lastOrderCount = allOrders.length;
             isInitialLoad = false;
             applyAllFilters();
-        } catch (err) { 
-            console.error("Fetch Error:", err); 
-        } finally { 
-            if(icon) setTimeout(() => icon.classList.remove('rotating'), 600); 
-        }
+        } catch (err) { console.error("Fetch Error:", err); } 
+        finally { if(icon) setTimeout(() => icon.classList.remove('rotating'), 600); }
     }
 
     function applyAllFilters() {
@@ -299,31 +295,33 @@
         applyAllFilters();
     }
 
-    // --- METHOD 2 UPDATED OPENCHAT ---
+    // --- DEEP SEARCH LOGIC FOR MISSING USER ID ---
     async function openChat(userId, name, orderId) {
         let finalUserId = userId;
 
-        // Agar userId missing hai, toh orderId se fetch karo
-        if(!finalUserId || finalUserId === "undefined" || finalUserId === "null") {
-            console.log(`Deep Fetching User ID for Order #${orderId}...`);
+        // Check if userId is empty, null or undefined
+        if(!finalUserId || finalUserId === "undefined" || finalUserId === "null" || finalUserId === "") {
+            console.log(`Searching userId for Order #${orderId} in Orders table...`);
             try {
+                // Fetching from main Orders table
                 const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/${orderId}`);
                 if(res.ok) {
                     const orderData = await res.json();
-                    finalUserId = orderData.userId || orderData.customerId;
+                    // Using user_id as per your database table structure
+                    finalUserId = orderData.user_id || orderData.userId;
+                    console.log("Found User ID:", finalUserId);
                 }
-            } catch (e) { console.error("Smart Fetch Failed", e); }
+            } catch (e) { console.error("Database fetch failed", e); }
         }
 
-        // Final check agar ab bhi nahi mili
-        if(!finalUserId || finalUserId === "undefined") {
-            alert(`Technical Issue: Customer ID not found for ${name}. Order table mein user_id missing hai.`);
+        if(!finalUserId || finalUserId === "undefined" || finalUserId === "null") {
+            alert(`Technical Issue: Customer ID for ${name} not found in database.`);
             return;
         }
-        
+
         activeChatUserId = finalUserId;
         document.getElementById('chatTitle').innerText = "Chat with " + name;
-        document.getElementById('chatWindow').innerHTML = '<div class="text-center mt-5"><i class="fas fa-spinner fa-spin"></i> Loading messages...</div>';
+        document.getElementById('chatWindow').innerHTML = '<div class="text-center mt-5"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
         
         const myModal = new bootstrap.Modal(document.getElementById('chatModal'));
         myModal.show();
@@ -370,10 +368,7 @@
                     message: messageText 
                 })
             });
-            if(response.ok) {
-                input.value = ''; 
-                loadChatHistory();
-            }
+            if(response.ok) { input.value = ''; loadChatHistory(); }
         } catch (err) { console.error(err); }
     }
 
@@ -395,12 +390,13 @@
 
     function renderOrders(orders) {
         const list = document.getElementById('ordersList');
-        if(orders.length === 0) { list.innerHTML = '<div class="text-center py-5"><h5>No orders match filters.</h5></div>'; return; }
+        if(orders.length === 0) { list.innerHTML = '<div class="text-center py-5"><h5>No orders found.</h5></div>'; return; }
 
         list.innerHTML = orders.map(item => {
             const st = (item.status || 'PLACED').toUpperCase();
             const pType = (item.paymentType || 'COD').toUpperCase();
-            const orderIdValue = item.orderId || item.id; // Hum main orderId use karenge search ke liye
+            const orderIdValue = item.orderId || item.id;
+            
             let pClass = 'badge-cod';
             if(pType.includes('ONLINE')) pClass = 'badge-online';
             if(pType.includes('UPI')) pClass = 'badge-upi';
@@ -488,8 +484,7 @@
         doc.text("STORE INVOICE", 15, 25);
         doc.setTextColor(0,0,0);
         doc.autoTable({
-            startY: 70,
-            head: [['Item', 'Qty', 'Rate', 'Total']],
+            startY: 70, head: [['Item', 'Qty', 'Rate', 'Total']],
             body: [[item.productName, item.quantity, `INR ${item.price}`, `INR ${item.price * item.quantity}`]],
             headStyles: { fillColor: [15, 23, 42] }
         });
