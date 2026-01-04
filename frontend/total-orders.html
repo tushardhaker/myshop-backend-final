@@ -436,6 +436,7 @@
                 for(let i=1; i<=5; i++) stars += `<i class="fa${i<=item.rating?'s':'r'} fa-star stars-gold"></i>`; 
             }
 
+            // FIXED LINE BELOW: Passing item.userId explicitly
             return `
             <div class="order-card shadow-sm">
                 <div class="row g-0">
@@ -455,7 +456,8 @@
                                 <div class="label-text">Customer Details</div>
                                 <div class="value-text">${item.customerName || 'Guest'}</div>
                                 <div class="small fw-bold text-success mt-1"><i class="fab fa-whatsapp me-1"></i>${item.customerMobile || 'N/A'}</div>
-                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat(${item.userId}, '${item.customerName || 'Customer'}')">
+                                
+                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat(${item.userId}, '${(item.customerName || 'Customer').replace(/'/g, "\\'")}')">
                                     <i class="fas fa-comment-dots me-1"></i> Chat
                                 </button>
                             </div>

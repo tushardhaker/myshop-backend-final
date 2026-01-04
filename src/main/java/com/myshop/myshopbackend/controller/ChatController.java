@@ -36,11 +36,18 @@ public class ChatController {
 
     @PostMapping("/send")
     public ResponseEntity<ChatMessage> sendMessage(@RequestBody ChatMessage msg) {
+        // Validation for IDs
+        if (msg.getSenderId() == null || msg.getReceiverId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.ok(chatRepo.save(msg));
     }
 
     @GetMapping("/history/{user1}/{user2}")
     public ResponseEntity<List<ChatMessage>> getHistory(@PathVariable Long user1, @PathVariable Long user2) {
+        if (user1 == null || user2 == null) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.ok(chatRepo.findChatHistory(user1, user2));
     }
 
@@ -50,14 +57,12 @@ public class ChatController {
             String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path path = Paths.get("uploads/" + fileName);
             
-            // Directory create karna agar exist nahi karti
             if (!Files.exists(path.getParent())) {
                 Files.createDirectories(path.getParent());
             }
             
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
 
-            // Dynamic URL for frontend access
             String fileUrl = backendUrl + "/uploads/" + fileName;
             return ResponseEntity.ok(Map.of("url", fileUrl));
         } catch (Exception e) {
