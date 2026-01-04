@@ -219,7 +219,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const shopId = localStorage.getItem('shopId') || "1"; // Default to 1 based on DB logs
+    const shopId = localStorage.getItem('shopId') || "1"; 
     let allOrders = [];
     let lastOrderCount = 0; 
     let isInitialLoad = true;
@@ -299,20 +299,29 @@
         applyAllFilters();
     }
 
-    async function openChat(userId, name) {
-        // --- DEEP SEARCH FOR ID ---
-        if(!userId || userId === "undefined" || userId === "null") {
-            // Hum allOrders mein search kar rahe hain kisi bhi field mein ID mil jaye
-            const orderRef = allOrders.find(o => o.customerName === name && (o.userId || o.customerId || o.user_id));
-            if(orderRef) {
-                userId = orderRef.userId || orderRef.customerId || orderRef.user_id;
-            } else {
-                alert(`Technical Issue: Customer ID not found for ${name}. Order table mein user_id missing hai.`);
-                return;
-            }
+    // --- METHOD 2 UPDATED OPENCHAT ---
+    async function openChat(userId, name, orderId) {
+        let finalUserId = userId;
+
+        // Agar userId missing hai, toh orderId se fetch karo
+        if(!finalUserId || finalUserId === "undefined" || finalUserId === "null") {
+            console.log(`Deep Fetching User ID for Order #${orderId}...`);
+            try {
+                const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/${orderId}`);
+                if(res.ok) {
+                    const orderData = await res.json();
+                    finalUserId = orderData.userId || orderData.customerId;
+                }
+            } catch (e) { console.error("Smart Fetch Failed", e); }
+        }
+
+        // Final check agar ab bhi nahi mili
+        if(!finalUserId || finalUserId === "undefined") {
+            alert(`Technical Issue: Customer ID not found for ${name}. Order table mein user_id missing hai.`);
+            return;
         }
         
-        activeChatUserId = userId;
+        activeChatUserId = finalUserId;
         document.getElementById('chatTitle').innerText = "Chat with " + name;
         document.getElementById('chatWindow').innerHTML = '<div class="text-center mt-5"><i class="fas fa-spinner fa-spin"></i> Loading messages...</div>';
         
@@ -324,8 +333,6 @@
     async function loadChatHistory() {
         if(!activeChatUserId) return;
         try {
-            // DB format: /history/senderId/receiverId
-            // Sender is Customer (activeChatUserId), Receiver is Shop (shopId)
             const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/history/${activeChatUserId}/${shopId}`);
             const history = await res.json();
             const win = document.getElementById('chatWindow');
@@ -359,7 +366,7 @@
                 body: JSON.stringify({ 
                     senderId: shopId, 
                     receiverId: activeChatUserId, 
-                    senderType: 'SHOP', // Matches your DB logs
+                    senderType: 'SHOP', 
                     message: messageText 
                 })
             });
@@ -393,6 +400,7 @@
         list.innerHTML = orders.map(item => {
             const st = (item.status || 'PLACED').toUpperCase();
             const pType = (item.paymentType || 'COD').toUpperCase();
+            const orderIdValue = item.orderId || item.id; // Hum main orderId use karenge search ke liye
             let pClass = 'badge-cod';
             if(pType.includes('ONLINE')) pClass = 'badge-online';
             if(pType.includes('UPI')) pClass = 'badge-upi';
@@ -403,8 +411,7 @@
             }
 
             const safeName = (item.customerName || 'Customer').replace(/'/g, "\\'");
-            // Yahan hum database ke har column ko check kar rahe hain ID ke liye
-            const currentUserId = item.userId || item.customerId || item.user_id || (item.user ? item.user.id : null);
+            const currentUserId = item.userId || item.customerId || item.user_id;
 
             return `
             <div class="order-card shadow-sm">
@@ -425,7 +432,7 @@
                                 <div class="label-text">Customer Details</div>
                                 <div class="value-text">${item.customerName || 'Guest'}</div>
                                 <div class="small fw-bold text-success mt-1"><i class="fab fa-whatsapp me-1"></i>${item.customerMobile || 'N/A'}</div>
-                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat('${currentUserId}', '${safeName}')">
+                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat('${currentUserId}', '${safeName}', '${orderIdValue}')">
                                     <i class="fas fa-comment-dots me-1"></i> Chat
                                 </button>
                             </div>
