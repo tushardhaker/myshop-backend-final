@@ -219,7 +219,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const shopId = localStorage.getItem('shopId');
+    const shopId = localStorage.getItem('shopId') || "1"; // Default to 1 based on DB logs
     let allOrders = [];
     let lastOrderCount = 0; 
     let isInitialLoad = true;
@@ -300,12 +300,14 @@
     }
 
     async function openChat(userId, name) {
-        // Validation: If ID is missing, try to locate it in the order list
+        // --- DEEP SEARCH FOR ID ---
         if(!userId || userId === "undefined" || userId === "null") {
-            const orderRef = allOrders.find(o => o.customerName === name && o.userId);
-            if(orderRef) userId = orderRef.userId;
-            else {
-                alert("Technical Issue: Customer ID not found for " + name);
+            // Hum allOrders mein search kar rahe hain kisi bhi field mein ID mil jaye
+            const orderRef = allOrders.find(o => o.customerName === name && (o.userId || o.customerId || o.user_id));
+            if(orderRef) {
+                userId = orderRef.userId || orderRef.customerId || orderRef.user_id;
+            } else {
+                alert(`Technical Issue: Customer ID not found for ${name}. Order table mein user_id missing hai.`);
                 return;
             }
         }
@@ -322,7 +324,9 @@
     async function loadChatHistory() {
         if(!activeChatUserId) return;
         try {
-            const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/history/${shopId}/${activeChatUserId}`);
+            // DB format: /history/senderId/receiverId
+            // Sender is Customer (activeChatUserId), Receiver is Shop (shopId)
+            const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/history/${activeChatUserId}/${shopId}`);
             const history = await res.json();
             const win = document.getElementById('chatWindow');
             
@@ -332,7 +336,7 @@
             }
 
             win.innerHTML = history.map(m => `
-                <div class="msg ${m.senderType === 'SHOPKEEPER' ? 'msg-sent' : 'msg-received'}">
+                <div class="msg ${m.senderType === 'CUSTOMER' ? 'msg-received' : 'msg-sent'}">
                     ${m.imageUrl ? `<img src="${m.imageUrl}" style="max-width:100%; border-radius:10px; margin-bottom:5px;">` : ''}
                     <div>${m.message || ''}</div>
                     <small style="font-size: 0.6rem; opacity: 0.7; display:block; margin-top:5px;">
@@ -355,7 +359,7 @@
                 body: JSON.stringify({ 
                     senderId: shopId, 
                     receiverId: activeChatUserId, 
-                    senderType: 'SHOPKEEPER', 
+                    senderType: 'SHOP', // Matches your DB logs
                     message: messageText 
                 })
             });
@@ -376,7 +380,7 @@
             await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: "", imageUrl: data.url })
+                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOP', message: "", imageUrl: data.url })
             });
             loadChatHistory();
         } catch(e) { console.error(e); } finally { document.getElementById('uploadStatus').style.display = 'none'; input.value = ''; }
@@ -399,7 +403,8 @@
             }
 
             const safeName = (item.customerName || 'Customer').replace(/'/g, "\\'");
-            const currentUserId = item.userId || item.customerId || (item.user ? item.user.id : null);
+            // Yahan hum database ke har column ko check kar rahe hain ID ke liye
+            const currentUserId = item.userId || item.customerId || item.user_id || (item.user ? item.user.id : null);
 
             return `
             <div class="order-card shadow-sm">
