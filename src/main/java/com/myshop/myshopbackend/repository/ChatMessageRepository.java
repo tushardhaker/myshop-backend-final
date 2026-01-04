@@ -1,11 +1,20 @@
 package com.myshop.myshopbackend.repository;
 
-import com.myshop.myshopbackend.model.ChatMessage;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.myshop.myshopbackend.model.ChatMessage;
+
+@Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    @Query("SELECT c FROM ChatMessage c WHERE (c.senderId = ?1 AND c.receiverId = ?2) OR (c.senderId = ?2 AND c.receiverId = ?1) ORDER BY c.timestamp ASC")
-    List<ChatMessage> findChatHistory(Long user1, Long user2);
+
+    @Query("SELECT m FROM ChatMessage m WHERE " +
+           "(m.senderId = :u1 AND m.receiverId = :u2) OR " +
+           "(m.senderId = :u2 AND m.receiverId = :u1) " +
+           "ORDER BY m.timestamp ASC")
+    List<ChatMessage> findChatHistory(@Param("u1") Long u1, @Param("u2") Long u2);
 }

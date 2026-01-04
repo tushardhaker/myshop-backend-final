@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +26,7 @@ import com.myshop.myshopbackend.repository.ChatMessageRepository;
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = {"https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "true")
+@CrossOrigin(origins = {"*", "https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "false")
 public class ChatController {
 
     @Autowired
@@ -36,25 +37,34 @@ public class ChatController {
 
     @PostMapping("/send")
     public ResponseEntity<ChatMessage> sendMessage(@RequestBody ChatMessage msg) {
-        // Validation for IDs
         if (msg.getSenderId() == null || msg.getReceiverId() == null) {
             return ResponseEntity.badRequest().build();
+        }
+        if (msg.getTimestamp() == null) {
+            msg.setTimestamp(new java.util.Date());
         }
         return ResponseEntity.ok(chatRepo.save(msg));
     }
 
     @GetMapping("/history/{user1}/{user2}")
-    public ResponseEntity<List<ChatMessage>> getHistory(@PathVariable Long user1, @PathVariable Long user2) {
-        if (user1 == null || user2 == null) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<List<ChatMessage>> getHistory(@PathVariable String user1, @PathVariable String user2) {
+        try {
+            // Safely parse String to Long to handle "undefined" or null strings from frontend
+            Long u1 = Long.parseLong(user1);
+            Long u2 = Long.parseLong(user2);
+            return ResponseEntity.ok(chatRepo.findChatHistory(u1, u2));
+        } catch (Exception e) {
+            // Return empty list instead of error if IDs are invalid
+            return ResponseEntity.ok(Collections.emptyList());
         }
-        return ResponseEntity.ok(chatRepo.findChatHistory(user1, user2));
     }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("message", "File is empty"));
+            
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("\\s+", "_");
             Path path = Paths.get("uploads/" + fileName);
             
             if (!Files.exists(path.getParent())) {
