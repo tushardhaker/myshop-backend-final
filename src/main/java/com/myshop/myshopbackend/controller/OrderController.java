@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- Very Important
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,8 +28,7 @@ import com.myshop.myshopbackend.repository.ProductRepository;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app", "http://localhost:5500",
-        "http://127.0.0.1:5500" }, allowCredentials = "true")
+@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500" }, allowCredentials = "true")
 public class OrderController {
 
     @Autowired
@@ -67,7 +66,6 @@ public class OrderController {
 
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
-                    // Stock update logic
                     productRepo.findByNameIgnoreCase(item.getProductName()).ifPresent(p -> {
                         if (p.getStock() >= item.getQuantity()) {
                             p.setStock(p.getStock() - item.getQuantity());
@@ -91,16 +89,15 @@ public class OrderController {
         return orderItemRepo.findById(itemId).map(item -> {
             item.setStatus(status.toUpperCase());
             LocalDateTime now = LocalDateTime.now();
-            if ("DELIVERED".equalsIgnoreCase(status))
-                item.setDeliveredAt(now);
-            if ("CANCELLED".equalsIgnoreCase(status))
-                item.setCancelledAt(now);
+            if ("DELIVERED".equalsIgnoreCase(status)) item.setDeliveredAt(now);
+            if ("CANCELLED".equalsIgnoreCase(status)) item.setCancelledAt(now);
             orderItemRepo.save(item);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/shop/{shopId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> getShopOrdersDetailed(@PathVariable Long shopId) {
         List<OrderItem> items = orderItemRepo.findByShopId(shopId);
         List<Map<String, Object>> response = new ArrayList<>();
@@ -128,41 +125,49 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getOrdersByUserDetailed(@PathVariable Long userId) {
-        List<Order> orders = orderRepo.findByUserId(userId);
-        List<Map<String, Object>> response = new ArrayList<>();
-        for (Order order : orders) {
-            Map<String, Object> orderMap = new HashMap<>();
-            orderMap.put("id", order.getId());
-            orderMap.put("totalAmount", order.getTotalAmount());
-            orderMap.put("orderDate", order.getOrderDate());
-            orderMap.put("status", order.getStatus());
-            orderMap.put("address", order.getAddress());
+    @Transactional(readOnly = true) // <-- ADDED THIS TO FIX 500 ERROR
+    public ResponseEntity<?> getOrdersByUserDetailed(@PathVariable Long userId) {
+        try {
+            List<Order> orders = orderRepo.findByUserId(userId);
+            List<Map<String, Object>> response = new ArrayList<>();
+            
+            for (Order order : orders) {
+                Map<String, Object> orderMap = new HashMap<>();
+                orderMap.put("id", order.getId());
+                orderMap.put("totalAmount", order.getTotalAmount());
+                orderMap.put("orderDate", order.getOrderDate());
+                orderMap.put("status", order.getStatus());
+                orderMap.put("address", order.getAddress());
+                orderMap.put("paymentType", order.getPaymentType());
+                orderMap.put("paymentId", order.getPaymentId());
 
-            // Adding payment info here too
-            orderMap.put("paymentType", order.getPaymentType());
-            orderMap.put("paymentId", order.getPaymentId()); // <--- ADDED HERE TOO
-
-            List<Map<String, Object>> itemsList = new ArrayList<>();
-            for (OrderItem item : order.getItems()) {
-                Map<String, Object> itemMap = new HashMap<>();
-                itemMap.put("id", item.getId());
-                itemMap.put("productName", item.getProductName());
-                itemMap.put("quantity", item.getQuantity());
-                itemMap.put("price", item.getPrice());
-                itemMap.put("shopName", item.getShopName());
-                itemMap.put("shopId", item.getShopId());
-                itemMap.put("itemStatus", item.getStatus());
-                itemMap.put("rating", item.getRating());
-                itemMap.put("review", item.getReview());
-                itemMap.put("placedAt", item.getPlacedAt());
-                itemMap.put("shippedAt", item.getShippedAt());
-                itemMap.put("deliveredAt", item.getDeliveredAt());
-                itemsList.add(itemMap);
+                List<Map<String, Object>> itemsList = new ArrayList<>();
+                // Transactional hone ki wajah se Lazy loading yahan error nahi degi
+                if (order.getItems() != null) {
+                    for (OrderItem item : order.getItems()) {
+                        Map<String, Object> itemMap = new HashMap<>();
+                        itemMap.put("id", item.getId());
+                        itemMap.put("productName", item.getProductName());
+                        itemMap.put("quantity", item.getQuantity());
+                        itemMap.put("price", item.getPrice());
+                        itemMap.put("shopName", item.getShopName());
+                        itemMap.put("shopId", item.getShopId());
+                        itemMap.put("itemStatus", item.getStatus());
+                        itemMap.put("rating", item.getRating());
+                        itemMap.put("review", item.getReview());
+                        itemMap.put("placedAt", item.getPlacedAt());
+                        itemMap.put("shippedAt", item.getShippedAt());
+                        itemMap.put("deliveredAt", item.getDeliveredAt());
+                        itemsList.add(itemMap);
+                    }
+                }
+                orderMap.put("items", itemsList);
+                response.add(orderMap);
             }
-            orderMap.put("items", itemsList);
-            response.add(orderMap);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Frontend ko error message bhejenge taaki debug ho sake
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
-        return ResponseEntity.ok(response);
     }
 }
