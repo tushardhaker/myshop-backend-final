@@ -30,7 +30,6 @@
             padding: 0;
         }
 
-        /* Navigation Styling */
         .navbar { 
             background: var(--primary-dark); 
             padding: 1.2rem; 
@@ -39,7 +38,6 @@
 
         .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
 
-        /* Order Card Component */
         .order-card { 
             background: white; 
             border-radius: 16px; 
@@ -61,7 +59,6 @@
             background-color: #ffffff;
         }
 
-        /* Labels & Value Text */
         .label-text { 
             font-size: 0.7rem; 
             text-transform: uppercase; 
@@ -77,7 +74,6 @@
             color: #1e293b; 
         }
 
-        /* Status Pills */
         .status-pill { 
             font-size: 0.75rem; 
             padding: 6px 14px; 
@@ -88,16 +84,14 @@
         }
 
         .st-placed { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
-        .st-paid { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; } /* Naya Status */
+        .st-paid { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
         .st-shipped { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
         .st-delivered { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
         .st-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
         .st-returned { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
-        /* Filter Section Styles */
         .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; }
 
-        /* Dynamic Payment Badges */
         .badge-payment {
             font-size: 0.7rem; 
             padding: 4px 12px; 
@@ -109,7 +103,6 @@
         .badge-online { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .badge-upi { background: #f5f3ff; color: #5b21b6; border: 1px solid #ddd6fe; }
 
-        /* Chat System */
         #chatWindow { 
             height: 400px; 
             overflow-y: auto; 
@@ -126,11 +119,10 @@
             border-radius: 15px; 
             max-width: 85%; 
         }
-        /* Toast Animation */
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
         .msg-sent { background: var(--primary-dark); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-received { background: white; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e2e8f0; }
 
@@ -231,7 +223,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-   const shopId = localStorage.getItem('shopId');
+    const shopId = localStorage.getItem('shopId');
     let allOrders = [];
     let lastOrderCount = 0; 
     let isInitialLoad = true;
@@ -366,11 +358,27 @@
         doc.save(`Invoice_MS_${item.id}.pdf`);
     }
 
+    // UPDATED OPEN CHAT FUNCTION
     async function openChat(userId, name) {
-        if(!userId) { alert("User ID not found."); return; }
+        // Fallback: If userId is missing, try to find it in the orders list via name
+        if(!userId || userId === "undefined" || userId === null) {
+            const foundOrder = allOrders.find(o => o.customerName === name);
+            if(foundOrder && foundOrder.userId) {
+                userId = foundOrder.userId;
+            } else {
+                alert("Technical Issue: Customer ID mapping failed. Please refresh.");
+                return;
+            }
+        }
+        
         activeChatUserId = userId;
         document.getElementById('chatTitle').innerText = "Chat with " + name;
-        new bootstrap.Modal(document.getElementById('chatModal')).show();
+        
+        // Clear old messages and show loader
+        document.getElementById('chatWindow').innerHTML = '<div class="text-center mt-5"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        
+        const myModal = new bootstrap.Modal(document.getElementById('chatModal'));
+        myModal.show();
         loadChatHistory();
     }
 
@@ -380,10 +388,19 @@
             const res = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/history/${shopId}/${activeChatUserId}`);
             const history = await res.json();
             const win = document.getElementById('chatWindow');
+            
+            if(history.length === 0) {
+                win.innerHTML = '<div class="text-center text-muted mt-5">No previous messages.</div>';
+                return;
+            }
+
             win.innerHTML = history.map(m => `
                 <div class="msg ${m.senderType === 'SHOPKEEPER' ? 'msg-sent' : 'msg-received'}">
-                    ${m.imageUrl ? `<img src="${m.imageUrl}" style="max-width:200px; border-radius:10px;">` : ''}
-                    <div>${m.message}</div>
+                    ${m.imageUrl ? `<img src="${m.imageUrl}" style="max-width:100%; border-radius:10px; margin-bottom:5px;">` : ''}
+                    <div>${m.message || ''}</div>
+                    <small style="font-size: 0.6rem; opacity: 0.7; display:block; margin-top:5px;">
+                        ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </small>
                 </div>`).join('');
             win.scrollTop = win.scrollHeight;
         } catch (err) { console.error(err); }
@@ -391,14 +408,24 @@
 
     async function sendMessage() {
         const input = document.getElementById('chatInput');
-        if(!input.value.trim() || !activeChatUserId) return;
+        const messageText = input.value.trim();
+        if(!messageText || !activeChatUserId) return;
+        
         try {
-            await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
+            const response = await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: input.value.trim() })
+                body: JSON.stringify({ 
+                    senderId: shopId, 
+                    receiverId: activeChatUserId, 
+                    senderType: 'SHOPKEEPER', 
+                    message: messageText 
+                })
             });
-            input.value = ''; loadChatHistory();
+            if(response.ok) {
+                input.value = ''; 
+                loadChatHistory();
+            }
         } catch (err) { console.error(err); }
     }
 
@@ -412,7 +439,7 @@
             await fetch(`https://myshop-backend-final-1.onrender.com/api/chat/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: "Photo", imageUrl: data.url })
+                body: JSON.stringify({ senderId: shopId, receiverId: activeChatUserId, senderType: 'SHOPKEEPER', message: "", imageUrl: data.url })
             });
             loadChatHistory();
         } catch(e) { console.error(e); } finally { document.getElementById('uploadStatus').style.display = 'none'; input.value = ''; }
@@ -436,7 +463,9 @@
                 for(let i=1; i<=5; i++) stars += `<i class="fa${i<=item.rating?'s':'r'} fa-star stars-gold"></i>`; 
             }
 
-            // FIXED LINE BELOW: Passing item.userId explicitly
+            // Extracting clean data for onclick to avoid quotes issue
+            const safeName = (item.customerName || 'Customer').replace(/'/g, "\\'");
+
             return `
             <div class="order-card shadow-sm">
                 <div class="row g-0">
@@ -456,8 +485,7 @@
                                 <div class="label-text">Customer Details</div>
                                 <div class="value-text">${item.customerName || 'Guest'}</div>
                                 <div class="small fw-bold text-success mt-1"><i class="fab fa-whatsapp me-1"></i>${item.customerMobile || 'N/A'}</div>
-                                
-                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat(${item.userId}, '${(item.customerName || 'Customer').replace(/'/g, "\\'")}')">
+                                <button class="btn btn-chat-cust btn-sm mt-2" onclick="openChat('${item.userId}', '${safeName}')">
                                     <i class="fas fa-comment-dots me-1"></i> Chat
                                 </button>
                             </div>
@@ -476,7 +504,7 @@
                                 <button class="btn-invoice btn-sm" onclick='downloadInvoice(${JSON.stringify(item)})'>
                                     <i class="fas fa-file-invoice me-1"></i> Invoice
                                 </button>
-                                ${st === 'DELIVERED' ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWhatsApp('${item.customerMobile}', '${item.customerName}', '${item.productName}', '${item.id}')"><i class="fab fa-whatsapp"></i></button>` : ''}
+                                ${st === 'DELIVERED' ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWhatsApp('${item.customerMobile}', '${safeName}', '${item.productName}', '${item.id}')"><i class="fab fa-whatsapp"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
