@@ -36,8 +36,8 @@
         <div class="analytics-card">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h3 class="fw-bold mb-1">Sales Performance</h3>
-                    <p class="mb-0 opacity-75">Visualizing your business growth and top-selling products.</p>
+                    <h3 class="fw-bold mb-1">Delivered Sales Performance</h3>
+                    <p class="mb-0 opacity-75">Visualizing revenue from completed deliveries only.</p>
                 </div>
                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
                     <button class="btn btn-light btn-sm fw-bold rounded-pill px-3" onclick="loadCharts()">
@@ -50,14 +50,14 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="chart-container">
-                    <h6 class="fw-bold mb-4 text-muted uppercase">Revenue Trend (Last 7 Days)</h6>
+                    <h6 class="fw-bold mb-4 text-muted uppercase">Delivered Revenue Trend (Last 7 Days)</h6>
                     <canvas id="salesTrendChart" style="max-height: 400px;"></canvas>
                 </div>
             </div>
 
             <div class="col-lg-4">
                 <div class="chart-container text-center">
-                    <h6 class="fw-bold mb-4 text-muted text-start uppercase">Product Share</h6>
+                    <h6 class="fw-bold mb-4 text-muted text-start uppercase">Delivered Product Share</h6>
                     <canvas id="productShareChart" style="max-height: 400px;"></canvas>
                 </div>
             </div>
@@ -81,11 +81,11 @@
                 const response = await fetch(`https://myshop-backend-final-1.onrender.com/api/orders/shop/${shopId}`);
                 const data = await response.json();
                 
-                // Sabhi valid orders (sirf Cancelled ko chhod kar) chart mein dikhayenge
-                const validOrders = data.filter(item => item.status !== 'CANCELLED');
+                // --- UPDATE: Sirf 'DELIVERED' status wale orders ko filter kiya gaya hai ---
+                const deliveredOrders = data.filter(item => item.status === 'DELIVERED');
                 
-                prepareSalesTrend(validOrders);
-                prepareProductShare(validOrders);
+                prepareSalesTrend(deliveredOrders);
+                prepareProductShare(deliveredOrders);
             } catch (err) {
                 console.error("Chart Data Error:", err);
             }
@@ -101,10 +101,11 @@
                 last7Days[dateStr] = 0;
             }
 
-            // Data mapping - 'placedAt' field ka use kar rahe hain
+            // Data mapping - 'placedAt' ya 'updatedAt' field ka use kar sakte hain
             items.forEach(item => {
-                if(item.placedAt) {
-                    const dateStr = new Date(item.placedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                const dateValue = item.placedAt || item.createdAt; // Aapke backend ke anusar field name
+                if(dateValue) {
+                    const dateStr = new Date(dateValue).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
                     if(last7Days.hasOwnProperty(dateStr)) {
                         last7Days[dateStr] += (parseFloat(item.price) * parseInt(item.quantity));
                     }
@@ -123,13 +124,13 @@
                     datasets: [{
                         label: 'Revenue (₹)',
                         data: values,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#10b981', // Green for Delivered Success
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
                         tension: 0.4,
                         borderWidth: 3,
                         pointRadius: 5,
-                        pointBackgroundColor: '#3b82f6'
+                        pointBackgroundColor: '#10b981'
                     }]
                 },
                 options: { 
@@ -159,7 +160,7 @@
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#0f172a', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        backgroundColor: ['#0f172a', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
                         hoverOffset: 10
                     }]
                 },
