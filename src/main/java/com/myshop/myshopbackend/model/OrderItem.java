@@ -3,7 +3,7 @@ package com.myshop.myshopbackend.model;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonProperty; // Import this
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -32,6 +32,9 @@ public class OrderItem {
     private Integer rating;
     private String review;
 
+    // --- YE FIELD AB DIRECT SAVE HOGI ---
+    private Long userId; 
+
     private LocalDateTime placedAt;
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
@@ -45,11 +48,16 @@ public class OrderItem {
 
     public OrderItem() {}
 
-    // --- YE CUSTOM GETTERS JSON MEIN DATA BHEJENGE ---
+    // --- JSON PROPERTY GETTERS (Frontend ke liye) ---
 
     @JsonProperty("orderId")
     public Long getOrderId() {
         return (order != null) ? order.getId() : null;
+    }
+
+    @JsonProperty("userId") // Frontend ko yahan se ID milegi
+    public Long getUserIdJson() {
+        return (this.userId != null) ? this.userId : (order != null ? order.getUserId() : null);
     }
 
     @JsonProperty("paymentType")
@@ -72,12 +80,9 @@ public class OrderItem {
         return (order != null) ? order.getAddress() : "No Address";
     }
 
-    @JsonProperty("userId")
-    public Long getUserId() {
-        return (order != null) ? order.getUserId() : null;
-    }
-
-    // Existing Getters and Setters
+    // Standard Getters/Setters
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getProductName() { return productName; }
@@ -100,7 +105,6 @@ public class OrderItem {
     public void setReview(String review) { this.review = review; }
     public Order getOrder() { return order; }
     public void setOrder(Order order) { this.order = order; }
-
     public LocalDateTime getPlacedAt() { return placedAt; }
     public void setPlacedAt(LocalDateTime placedAt) { this.placedAt = placedAt; }
     public LocalDateTime getShippedAt() { return shippedAt; }

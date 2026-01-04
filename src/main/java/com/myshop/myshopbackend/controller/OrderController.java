@@ -28,7 +28,8 @@ import com.myshop.myshopbackend.repository.ProductRepository;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500" }, allowCredentials = "true")
+@CrossOrigin(origins = { "https://myshop-backend-final.vercel.app", "http://localhost:5500",
+        "http://127.0.0.1:5500" }, allowCredentials = "true")
 public class OrderController {
 
     @Autowired
@@ -63,16 +64,20 @@ public class OrderController {
         try {
             order.setOrderDate(LocalDateTime.now());
             order.setStatus("PLACED");
+            Long customerId = order.getUserId(); // Parent order se ID uthayi
 
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
+                    // Stock management logic
                     productRepo.findByNameIgnoreCase(item.getProductName()).ifPresent(p -> {
                         if (p.getStock() >= item.getQuantity()) {
                             p.setStock(p.getStock() - item.getQuantity());
                             productRepo.save(p);
                         }
                     });
+
                     item.setOrder(order);
+                    item.setUserId(customerId); // <-- FIX: Item table mein ID save kar di
                     item.setStatus("PLACED");
                     item.setPlacedAt(LocalDateTime.now());
                 }
@@ -89,8 +94,10 @@ public class OrderController {
         return orderItemRepo.findById(itemId).map(item -> {
             item.setStatus(status.toUpperCase());
             LocalDateTime now = LocalDateTime.now();
-            if ("DELIVERED".equalsIgnoreCase(status)) item.setDeliveredAt(now);
-            if ("CANCELLED".equalsIgnoreCase(status)) item.setCancelledAt(now);
+            if ("DELIVERED".equalsIgnoreCase(status))
+                item.setDeliveredAt(now);
+            if ("CANCELLED".equalsIgnoreCase(status))
+                item.setCancelledAt(now);
             orderItemRepo.save(item);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
@@ -112,12 +119,18 @@ public class OrderController {
             map.put("review", item.getReview());
             map.put("placedAt", item.getPlacedAt());
 
+            // --- FIX: Direct userId bhejna ---
+            map.put("userId", item.getUserId());
+
             if (item.getOrder() != null) {
                 map.put("customerName", item.getOrder().getCustomerName());
                 map.put("customerMobile", item.getOrder().getMobile());
                 map.put("address", item.getOrder().getAddress());
                 map.put("paymentType", item.getOrder().getPaymentType());
                 map.put("paymentId", item.getOrder().getPaymentId());
+                // Fallback agar item.userId null ho
+                if (item.getUserId() == null)
+                    map.put("userId", item.getOrder().getUserId());
             }
             response.add(map);
         }
@@ -130,7 +143,7 @@ public class OrderController {
         try {
             List<Order> orders = orderRepo.findByUserId(userId);
             List<Map<String, Object>> response = new ArrayList<>();
-            
+
             for (Order order : orders) {
                 Map<String, Object> orderMap = new HashMap<>();
                 orderMap.put("id", order.getId());
