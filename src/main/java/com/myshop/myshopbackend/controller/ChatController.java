@@ -4,9 +4,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map; // Import added
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,21 +41,23 @@ public class ChatController {
         if (msg.getSenderId() == null || msg.getReceiverId() == null) {
             return ResponseEntity.badRequest().build();
         }
+        
+        // FIX: Using LocalDateTime to match your Model's data type
         if (msg.getTimestamp() == null) {
-            msg.setTimestamp(new java.util.Date());
+            msg.setTimestamp(LocalDateTime.now());
         }
+        
         return ResponseEntity.ok(chatRepo.save(msg));
     }
 
     @GetMapping("/history/{user1}/{user2}")
     public ResponseEntity<List<ChatMessage>> getHistory(@PathVariable String user1, @PathVariable String user2) {
         try {
-            // Safely parse String to Long to handle "undefined" or null strings from frontend
+            // Safely parse String to Long
             Long u1 = Long.parseLong(user1);
             Long u2 = Long.parseLong(user2);
             return ResponseEntity.ok(chatRepo.findChatHistory(u1, u2));
         } catch (Exception e) {
-            // Return empty list instead of error if IDs are invalid
             return ResponseEntity.ok(Collections.emptyList());
         }
     }
