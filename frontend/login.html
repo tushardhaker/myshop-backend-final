@@ -13,15 +13,45 @@
             --accent-blue: #007185;
             --action-orange: #ff9900;
             --text-muted: #a7acb2;
+            --border-color: rgba(255,255,255,0.05);
         }
 
         body {
             background-color: var(--dark-bg);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            height: 100vh;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        /* Back Button Navbar */
+        .top-nav {
+            padding: 15px 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+        }
+        .btn-back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            color: #ffffff;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        .btn-back-link:hover { color: var(--action-orange); }
+
+        .wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 15px 20px 15px;
         }
 
         .login-container {
@@ -31,12 +61,12 @@
             overflow: hidden;
             display: flex;
             max-width: 900px;
-            width: 95%;
-            margin: auto;
+            width: 100%;
             min-height: 520px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
         }
 
+        /* Left Branding Panel */
         .branding-panel {
             background: linear-gradient(135deg, #232f3e 0%, #131921 100%);
             width: 40%;
@@ -44,7 +74,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            border-right: 1px solid rgba(255,255,255,0.05);
+            border-right: 1px solid var(--border-color);
         }
 
         .branding-panel h1 {
@@ -75,9 +105,10 @@
             margin-right: 12px;
         }
 
+        /* Right Form Panel */
         .form-panel {
             width: 60%;
-            padding: 60px;
+            padding: 50px 60px;
             background: var(--card-dark);
         }
 
@@ -94,7 +125,7 @@
             border-radius: 6px;
             padding: 12px 15px;
             color: #fff;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .form-control:focus {
@@ -134,16 +165,10 @@
         }
 
         .signup-section {
-            margin-top: 40px;
+            margin-top: 30px;
             text-align: center;
             border-top: 1px solid #333;
-            padding-top: 25px;
-        }
-
-        .signup-section p {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 10px;
+            padding-top: 20px;
         }
 
         .btn-outline-register {
@@ -155,32 +180,33 @@
             font-size: 14px;
             display: inline-block;
             transition: 0.3s;
+            width: 100%;
         }
 
-        .btn-outline-register:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: #777;
-            color: #fff;
-        }
-
-        .alert {
-            background: #fdf0f0;
-            border: 1px solid #d5a3a3;
-            color: #b12704;
-            font-size: 13px;
-            border-radius: 4px;
-        }
         .divider:after, .divider:before {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: #eee;
-    }
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #444;
+        }
+
+        /* Responsive Settings */
+        @media (max-width: 992px) {
+            .branding-panel { display: none !important; }
+            .form-panel { width: 100%; padding: 40px 20px; }
+            .login-container { max-width: 450px; min-height: auto; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container d-flex justify-content-center">
+    <nav class="top-nav">
+        <a href="javascript:history.back()" class="btn-back-link">
+            <i class="fas fa-arrow-left me-2"></i> Back to Previous
+        </a>
+    </nav>
+
+    <div class="wrapper">
         <div class="login-container">
             <div class="branding-panel">
                 <h1>MyShop Pro</h1>
@@ -204,28 +230,29 @@
                         <label class="form-label">Password</label>
                         <input type="password" id="password" class="form-control" placeholder="••••••••" required>
                     </div>
+
                     <div class="mt-3 text-center">
-    <div class="divider d-flex align-items-center my-4">
-        <p class="text-center fw-bold mx-3 mb-0 text-muted">OR</p>
-    </div>
-    
-    <a href="https://myshop-backend-final-1.onrender.com/oauth2/authorization/google" 
-       class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center" 
-       style="border-radius: 8px; padding: 10px; font-weight: 500;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-             alt="Google" style="width: 20px; margin-right: 10px;">
-        Continue with Google
-    </a>
-</div>
+                        <div class="divider d-flex align-items-center my-4">
+                            <p class="text-center fw-bold mx-3 mb-0 text-muted" style="font-size: 12px;">OR</p>
+                        </div>
+                        
+                        <a href="https://myshop-backend-final-1.onrender.com/oauth2/authorization/google" 
+                           class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center" 
+                           style="border-radius: 8px; padding: 10px; font-weight: 500; font-size: 14px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+                                 alt="Google" style="width: 18px; margin-right: 10px;">
+                            Continue with Google
+                        </a>
+                    </div>
                     
                     <button type="submit" id="loginBtn" class="btn btn-login">Continue</button>
                     
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 15px; text-align: center;">
                         By signing in, you agree to MyShop's Conditions of Use and Privacy Notice.
                     </p>
 
                     <div class="signup-section">
-                        <p>New to MyShop?</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">New to MyShop?</p>
                         <a href="index.html" class="btn-outline-register">Create your MyShop account</a>
                     </div>
                 </form>
@@ -241,6 +268,10 @@
         
         const identifier = document.getElementById('identifier').value.trim();
         const password = document.getElementById('password').value;
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Verifying...";
 
         try {
             const response = await fetch('https://myshop-backend-final-1.onrender.com/api/users/login', {
@@ -252,33 +283,31 @@
             if (response.ok) {
                 const data = await response.json();
                 
-                // Details Store karna
                 localStorage.setItem('userId', data.id);
                 localStorage.setItem('userName', data.name);
                 localStorage.setItem('userRole', data.role);
 
-                // Role based redirect logic
                 if (data.role.toUpperCase() === 'SHOPKEEPER') {
                     if (data.shopId === null || data.shopId === undefined) {
-                        // First time shopkeeper: Create Shop page par bhejo
-                        alert("Welcome! Please complete your shop registration.");
                         window.location.href = 'create-shop.html';
                     } else {
-                        // Purana shopkeeper: Dashboard par bhejo
                         localStorage.setItem('shopId', data.shopId);
                         window.location.href = 'shopkeeper_dashboard.html';
                     }
                 } else {
-                    // Normal Customer: Shopping page par bhejo
                     window.location.href = 'customer.html';
                 }
             } else {
                 const errorMsg = await response.text();
                 alert("Login Failed: " + (errorMsg || "Invalid Credentials"));
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Continue";
             }
         } catch (err) {
             console.error(err);
             alert("Server connection failed!");
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Continue";
         }
     });
 </script>
