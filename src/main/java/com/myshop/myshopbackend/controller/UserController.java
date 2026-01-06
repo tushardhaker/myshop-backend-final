@@ -31,7 +31,7 @@ import com.myshop.myshopbackend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "true")
+@CrossOrigin(origins = {"https://myshop-pro-tushar-2004.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "true")
 public class UserController {
 
     @Autowired
@@ -41,7 +41,7 @@ public class UserController {
     @Autowired
     private JavaMailSender mailSender;
 
-    private final String FRONTEND_BASE = "https://myshop-backend-final.vercel.app/";
+    private final String FRONTEND_BASE = "https://myshop-pro-tushar-2004.vercel.app/";
 
     // 1. Google Login & Registration Success Logic
     @GetMapping("/loginSuccess")

@@ -27,7 +27,7 @@ import com.myshop.myshopbackend.repository.ChatMessageRepository;
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = {"*", "https://myshop-backend-final.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "false")
+@CrossOrigin(origins = {"*", "https://myshop-pro-tushar-2004.vercel.app", "http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "false")
 public class ChatController {
 
     @Autowired

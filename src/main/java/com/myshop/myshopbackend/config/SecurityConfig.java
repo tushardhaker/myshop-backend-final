@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .defaultSuccessUrl(backendUrl + "/api/users/loginSuccess", true)
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("https://myshop-backend-final.vercel.app/index.html")
+                .logoutSuccessUrl("https://myshop-pro-tushar-2004.vercel.app/index.html")
                 .permitAll()
             );
 
@@ -61,7 +61,7 @@ public class SecurityConfig {
         // Patterns use karne se "allowCredentials(true)" ke saath "*" ka error nahi aata
         config.setAllowedOriginPatterns(List.of(
             "https://myshop-backend-final-1.onrender.com",
-            "https://myshop-backend-final.vercel.app",
+            "https://myshop-pro-tushar-2004.vercel.app",
             "http://localhost:5500",
             "http://127.0.0.1:5500",
             "http://localhost:5173"

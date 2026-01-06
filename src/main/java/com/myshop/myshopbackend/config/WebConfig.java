@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                     backendUrl,                                // Render Backend URL
-                    "https://myshop-backend-final.vercel.app", // Aapka Vercel Frontend URL
+                    "https://myshop-pro-tushar-2004.vercel.app", // Aapka Vercel Frontend URL
                     "http://localhost:5500", 
                     "http://127.0.0.1:5500",
                     "http://localhost:5173"                    // React/Vite ke liye
