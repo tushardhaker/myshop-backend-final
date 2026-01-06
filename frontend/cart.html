@@ -20,9 +20,31 @@
         
         body { background-color: var(--bg-gray); font-family: 'Inter', sans-serif; color: var(--text-main); }
         
-        /* Navbar */
-        .navbar { background-color: var(--primary); padding: 12px 0; border-bottom: 4px solid var(--accent); }
-        .navbar-brand { font-size: 24px; letter-spacing: -0.5px; }
+        /* Navbar with Fixed Back Button */
+        .navbar { 
+            background-color: var(--primary); 
+            padding: 10px 0; 
+            border-bottom: 4px solid var(--accent); 
+        }
+
+        .btn-back-main {
+            background-color: #37475a;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-back-main:hover {
+            background-color: #485769;
+            color: var(--accent);
+        }
 
         /* Cart Layout */
         .cart-container { background: white; padding: 30px; border-radius: 4px; }
@@ -58,7 +80,6 @@
 
         /* Summary Sidebar */
         .summary-box { background: white; padding: 25px; border-radius: 4px; position: sticky; top: 100px; }
-        .free-delivery-text { color: #007600; font-size: 12px; line-height: 1.4; }
         
         .btn-checkout { 
             background: linear-gradient(to bottom, #f7dfa1, #f0c14b);
@@ -67,7 +88,6 @@
             box-shadow: 0 2px 5px rgba(213,217,217,0.2); transition: 0.2s;
         }
         .btn-checkout:hover { background: linear-gradient(to bottom, #f5d172, #eeb933); }
-        .btn-checkout:disabled { background: #f1f1f1; border-color: #ddd; color: #999; cursor: not-allowed; }
 
         /* Empty State */
         .empty-cart-card { text-align: center; padding: 80px 40px; background: white; border-radius: 4px; }
@@ -78,11 +98,16 @@
 
     <nav class="navbar sticky-top mb-4">
         <div class="container d-flex justify-content-between align-items-center px-4">
-            <a class="navbar-brand fw-bold text-white" href="customer.html">
-                MyShop<span class="text-warning">.pro</span>
-            </a>
+            <div class="d-flex align-items-center">
+                <a href="customer.html" class="btn-back-main me-3">
+                    <i class="fas fa-chevron-left"></i> Back to Shop
+                </a>
+                <a class="navbar-brand fw-bold text-white m-0" href="customer.html">
+                    MyShop<span class="text-warning">.pro</span>
+                </a>
+            </div>
             <div class="text-white small d-none d-md-block">
-                <i class="fas fa-lock me-2 text-warning"></i> Secure SSL Encryption
+                <i class="fas fa-lock me-2 text-warning"></i> Secure Checkout
             </div>
         </div>
     </nav>
@@ -108,40 +133,16 @@
 
             <div class="col-lg-3">
                 <div class="summary-box shadow-sm">
-                    <div class="free-delivery-text mb-3">
-                        <i class="fas fa-check-circle me-1"></i> 
-                        Your order qualifies for <b>FREE Delivery</b>. Select this option at checkout.
-                    </div>
-                    
                     <div class="mb-4">
                         <span class="fs-5">Subtotal (<span class="totalItemsCount">0</span> items):</span>
                         <div class="fw-bold fs-3">₹<span class="grandTotalAmount">0.00</span></div>
                     </div>
 
-                    <div class="form-check mb-3 small">
-                        <input class="form-check-input" type="checkbox" id="giftCheck">
-                        <label class="form-check-label" for="giftCheck">This order contains a gift</label>
-                    </div>
-
                     <button class="btn btn-checkout mb-3" id="checkoutBtn" onclick="proceedToBuy()">
                         Proceed to Checkout
                     </button>
-
-                    <div class="accordion accordion-flush border rounded" id="promoAccordion">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2 small fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#promoInput">
-                                    Apply Promo Code
-                                </button>
-                            </h2>
-                            <div id="promoInput" class="accordion-collapse collapse">
-                                <div class="accordion-body p-2 d-flex gap-1">
-                                    <input type="text" class="form-control form-control-sm" placeholder="Code">
-                                    <button class="btn btn-dark btn-sm">Apply</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
+                    <p class="small text-muted text-center"><i class="fas fa-info-circle"></i> Shipping and taxes calculated at checkout.</p>
                 </div>
             </div>
         </div>
@@ -166,12 +167,12 @@
                 <div class="empty-cart-card">
                     <div class="empty-icon"><i class="fas fa-cart-arrow-down"></i></div>
                     <h2 class="fw-bold">Your Cart is empty</h2>
-                    <p class="text-muted mb-4">Your Shopping Cart lives to serve. Give it purpose — fill it with groceries, electronics, and more.</p>
-                    <a href="customer.html" class="btn btn-warning px-5 py-2 fw-bold rounded-pill shadow-sm">Continue Shopping</a>
+                    <p class="text-muted mb-4">Continue exploring our wide range of products.</p>
+                    <a href="customer.html" class="btn btn-warning px-5 py-2 fw-bold rounded-pill">Shop Now</a>
                 </div>`;
             countElements.forEach(el => el.innerText = "0");
             totalElements.forEach(el => el.innerText = "0.00");
-            checkoutBtn.disabled = true;
+            if(checkoutBtn) checkoutBtn.disabled = true;
             return;
         }
 
@@ -180,20 +181,20 @@
         let totalPrice = 0;
 
         cart.forEach((item, index) => {
-            const itemTotal = item.price * item.quantity;
-            totalQty += item.quantity;
+            const itemTotal = item.price * (item.quantity || 1);
+            totalQty += (item.quantity || 1);
             totalPrice += itemTotal;
 
             htmlContent += `
                 <div class="item-row row mx-0">
                     <div class="col-md-3 col-4 p-0">
                         <div class="product-img-box">
-                            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" class="product-img" alt="${item.name}">
+                            <img src="${item.imageUrl}" class="product-img" onerror="this.src='https://via.placeholder.com/150'">
                         </div>
                     </div>
                     <div class="col-md-7 col-8 ps-md-4">
                         <a href="#" class="product-name">${item.name}</a>
-                        <div class="shop-id mb-1">Brand: <span class="text-info fw-bold">#${item.shopId}</span></div>
+                        <div class="shop-id mb-1 text-muted small">ID: #${item.id}</div>
                         <div class="stock-status mb-2">In Stock</div>
                         
                         <div class="action-bar">
@@ -204,20 +205,18 @@
                                 </select>
                             </div>
                             <span class="action-link" onclick="removeItem(${index})"><i class="fas fa-trash-alt me-1"></i>Delete</span>
-                            <span class="action-link d-none d-md-inline">Save for later</span>
                         </div>
                     </div>
                     <div class="col-md-2 text-end">
                         <span class="price-text">₹${item.price.toLocaleString()}</span>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
 
         itemsContainer.innerHTML = htmlContent;
         countElements.forEach(el => el.innerText = totalQty);
         totalElements.forEach(el => el.innerText = totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2}));
-        checkoutBtn.disabled = false;
+        if(checkoutBtn) checkoutBtn.disabled = false;
     }
 
     function updateQuantity(index, newQty) {
@@ -226,7 +225,7 @@
     }
 
     function removeItem(index) {
-        if(confirm("Remove this item from your basket?")) {
+        if(confirm("Remove this item?")) {
             cart.splice(index, 1);
             saveAndRefresh();
         }
@@ -237,14 +236,13 @@
         renderCart();
     }
 
-    async function proceedToBuy() {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            alert("Please login to place an order.");
+    function proceedToBuy() {
+        if (!localStorage.getItem('userId')) {
+            alert("Please login first.");
             window.location.href = 'login.html';
-            return;
+        } else {
+            window.location.href = 'checkout.html';
         }
-        window.location.href = 'checkout.html'; 
     }
 </script>
 </body>

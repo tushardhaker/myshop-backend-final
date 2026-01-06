@@ -23,13 +23,31 @@
             color: var(--text-main);
         }
 
+        /* Navbar & Back Button */
         .navbar { 
             background-color: #fff; 
-            padding: 15px 0; 
+            padding: 12px 0; 
             border-bottom: 1px solid #ddd;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .navbar-brand { font-size: 22px; color: var(--primary) !important; letter-spacing: -1px; }
+        
+        .btn-back {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .btn-back:hover {
+            background-color: #f0f2f2;
+            color: #000;
+        }
 
         .checkout-title { font-weight: 700; font-size: 24px; margin: 25px 0; }
 
@@ -90,7 +108,12 @@
 
     <nav class="navbar">
         <div class="container d-flex justify-content-between align-items-center px-4">
-            <a class="navbar-brand fw-bold" href="customer.html">MyShop<span class="text-warning">.pro</span></a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="cart.html" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Cart
+                </a>
+                <a class="navbar-brand fw-bold m-0" href="customer.html">MyShop<span class="text-warning">.pro</span></a>
+            </div>
             <div class="text-muted small">
                 <i class="fas fa-lock me-1"></i> Secure Checkout
             </div>
@@ -235,7 +258,6 @@
         finalTotalElement.innerText = total.toLocaleString();
     }
 
-    // Backend ko order bhejta hai (Common function)
     async function sendOrderToBackend(orderData) {
         try {
             const response = await fetch('https://myshop-backend-final-1.onrender.com/api/orders/place', {
@@ -286,12 +308,10 @@
         }
 
         const totalAmount = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-
         const btn = document.getElementById('placeOrderBtn');
         btn.disabled = true;
         btn.innerText = "Processing...";
 
-        // Initial Data Structure
         const orderData = {
             userId: parseInt(userId),
             customerName: name,
@@ -299,8 +319,8 @@
             address: address,
             totalAmount: totalAmount,
             paymentType: paymentType,
-            status: "PLACED", // Default status
-            paymentId: "COD_PENDING", // Default placeholder
+            status: "PLACED",
+            paymentId: "COD_PENDING",
             items: cart.map(item => ({
                 productName: item.name,
                 quantity: item.quantity || 1,
@@ -313,7 +333,6 @@
 
         if (paymentType === "ONLINE") {
             try {
-                // 1. Backend se Razorpay Order create karwayein
                 const resp = await fetch('https://myshop-backend-final-1.onrender.com/api/payment/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -323,7 +342,6 @@
                 if(!resp.ok) throw new Error("Payment initialization failed");
                 const rzpOrder = await resp.json();
 
-                // 2. Razorpay Popup Configuration
                 const options = {
                     "key": "rzp_test_Rz1yk3tgGSCQya", 
                     "amount": rzpOrder.amount,
@@ -332,14 +350,9 @@
                     "description": "Order Payment",
                     "order_id": rzpOrder.id,
                     "handler": async function (response) {
-                        // PAYMENT SUCCESSFUL!
-                        // Ab orderData update karein taaki shopkeeper ko PAID dikhe
                         orderData.status = "PAID";
                         orderData.paymentId = response.razorpay_payment_id;
-                        
-                        // Items ka status bhi PAID kar dete hain
                         orderData.items.forEach(item => item.status = "PAID");
-
                         await sendOrderToBackend(orderData);
                     },
                     "prefill": { "name": name, "contact": mobile },
@@ -358,7 +371,6 @@
             }
         } 
         else {
-            // Agar COD hai toh directly backend bhej dein
             await sendOrderToBackend(orderData);
         }
     }
