@@ -95,15 +95,25 @@
             border: 1px solid #ddd; border-radius: 12px; background: white; 
             height: 100%; padding: 15px; transition: 0.3s; position: relative;
         }
-        .img-box { height: 150px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
-        .product-img { max-height: 100%; max-width: 100%; object-fit: contain; }
         
+        /* UPDATED: Image/Slider Container */
+        .img-box { height: 150px; margin-bottom: 10px; overflow: hidden; position: relative; }
+        .product-img { height: 150px; width: 100%; object-fit: contain; }
+        
+        /* Carousel Customization */
+        .carousel-indicators [data-bs-target] {
+            background-color: var(--amazon-orange);
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        .carousel-control-prev-icon, .carousel-control-next-icon {
+            background-color: rgba(0,0,0,0.2); border-radius: 50%; width: 20px; height: 20px;
+        }
+
         .wishlist-btn { 
             position: absolute; top: 15px; right: 15px; z-index: 10; cursor: pointer; 
             font-size: 18px; transition: 0.2s; 
         }
 
-        /* Responsive Settings */
         @media (max-width: 768px) {
             .category-sidebar { display: none; }
             main.content-area { margin-left: 0; padding: 10px; }
@@ -111,6 +121,17 @@
             .header-tools { margin: 10px 0; width: 100%; order: 3; }
             .navbar .container-fluid { flex-wrap: wrap; }
             .nav-icon-link span { display: none; }
+        }
+        .product-desc-text {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 32px;
+            line-height: 16px;
         }
     </style>
 </head>
@@ -120,9 +141,9 @@
         <div class="container-fluid px-3 d-flex align-items-center justify-content-between">
             <a class="navbar-brand fw-bold text-white m-0" href="#">MyShop<span class="text-warning">.pro</span></a>
             <a href="javascript:void(0)" onclick="localStorage.removeItem('userId'); window.location.href='login.html';" class="nav-icon-link">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-</a>
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
             <div class="header-tools">
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search anything..." onkeyup="filterProducts()">
@@ -155,6 +176,7 @@
 
     <div id="toast-container" style="position:fixed; bottom:20px; left:20px; z-index:9999;"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const categories = [
         { name: 'ALL', icon: 'fa-border-all' },
@@ -222,17 +244,55 @@
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
         document.getElementById('resultCount').innerText = `${products.length} Products Found`;
+        
         products.forEach(p => {
             const inWish = wishlist.some(x => x.id === p.id);
+            
+            // MULTI-IMAGE LOGIC: Split the URLs
+            const images = p.imageUrl ? p.imageUrl.split(',').map(img => img.trim()) : ['https://via.placeholder.com/150'];
+            const carouselId = `carousel-${p.id}`;
+
+            // Building Carousel Items
+            let indicators = '';
+            let carouselItems = '';
+            
+            images.forEach((img, idx) => {
+                indicators += `<button type="button" data-bs-target="#${carouselId}" data-bs-slide-to="${idx}" class="${idx === 0 ? 'active' : ''}"></button>`;
+                carouselItems += `
+                    <div class="carousel-item ${idx === 0 ? 'active' : ''}">
+                        <img src="${img}" class="product-img" onerror="this.src='https://via.placeholder.com/150'">
+                    </div>`;
+            });
+
             grid.innerHTML += `
                 <div class="col-6 col-md-4 col-xl-3">
                     <div class="product-card">
                         <div class="wishlist-btn" onclick="toggleWish(${p.id})">
                             <i class="${inWish?'fas text-danger':'far text-muted'} fa-heart"></i>
                         </div>
-                        <div class="img-box"><img src="${p.imageUrl}" class="product-img" onerror="this.src='https://via.placeholder.com/150'"></div>
+                        
+                        <div class="img-box">
+                            <div id="${carouselId}" class="carousel slide" data-bs-interval="false">
+                                <div class="carousel-indicators" style="bottom:-10px">
+                                    ${images.length > 1 ? indicators : ''}
+                                </div>
+                                <div class="carousel-inner">
+                                    ${carouselItems}
+                                </div>
+                                ${images.length > 1 ? `
+                                <button class="carousel-control-prev" type="button" data-bs-target="#${carouselId}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon"></span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#${carouselId}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon"></span>
+                                </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
                         <div class="small text-muted text-uppercase fw-bold" style="font-size:9px">${p.category}</div>
                         <h6 class="text-truncate fw-bold mb-1" style="font-size:14px">${p.name}</h6>
+                        <p class="product-desc-text">${p.description || 'No description available'}</p>
                         <div class="fw-bold mb-2">₹${p.price}</div>
                         <button class="btn btn-add" onclick="addToCart(${p.id})">Add to Cart</button>
                     </div>
@@ -240,7 +300,6 @@
         });
     }
 
-    // --- FIX: WISHLIST TOGGLE FUNCTION ---
     function toggleWish(id) {
         const product = allProducts.find(p => p.id === id);
         const index = wishlist.findIndex(item => item.id === id);
@@ -255,7 +314,7 @@
         
         localStorage.setItem('myShopWishlist', JSON.stringify(wishlist));
         updateBadges();
-        displayProducts(allProducts); // Redraw to update heart icons
+        displayProducts(allProducts); 
     }
 
     function filterByCategory(cat, el) {
