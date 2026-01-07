@@ -119,7 +119,10 @@
     <nav class="navbar sticky-top">
         <div class="container-fluid px-3 d-flex align-items-center justify-content-between">
             <a class="navbar-brand fw-bold text-white m-0" href="#">MyShop<span class="text-warning">.pro</span></a>
-            
+            <a href="javascript:void(0)" onclick="localStorage.removeItem('userId'); window.location.href='login.html';" class="nav-icon-link">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Logout</span>
+</a>
             <div class="header-tools">
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search anything..." onkeyup="filterProducts()">
